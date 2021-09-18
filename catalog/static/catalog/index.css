@@ -8,3 +8,6 @@ td, th {
 th {
     background-color: #ddd;
 }
+div {
+    margin: 1em 0;
+}

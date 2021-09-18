@@ -1,5 +1,6 @@
 import re
 
+from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
@@ -19,7 +20,14 @@ def index(request: HttpRequest):
         booklist = Book.objects.all()
         filtered = False
 
-    return render(request, 'catalog/index.html', context={'books': booklist, 'filtered': filtered})
+    paginator = Paginator(booklist, 10)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+
+    return render(request, 'catalog/index.html', context={
+        'page_obj': page_obj,
+        'books': booklist,
+        'filtered': filtered
+    })
 
 
 def import_books(request: HttpRequest):
