@@ -1,7 +1,7 @@
 import re
 
 from django.core.paginator import Paginator
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 
@@ -10,15 +10,16 @@ from .models import Book
 
 
 def index(request: HttpRequest):
+    booklist = Book.objects.all()
+    filtered = False
+
     if 'author' in request.GET:
-        booklist = Book.objects.filter(authors__name__in=[request.GET['author']])
+        booklist = booklist.filter(authors__name__in=[request.GET['author']])
         filtered = True
-    elif 'series' in request.GET:
-        booklist = Book.objects.filter(series__title__in=[request.GET['series']])
+
+    if 'series' in request.GET:
+        booklist = booklist.filter(series__title__in=[request.GET['series']])
         filtered = True
-    else:
-        booklist = Book.objects.all()
-        filtered = False
 
     paginator = Paginator(booklist, 10)
     page_obj = paginator.get_page(request.GET.get('page', 1))
