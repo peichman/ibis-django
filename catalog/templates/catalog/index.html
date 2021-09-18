@@ -3,12 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <title>Catalog Index</title>
+    <style type="text/css">
+        table {
+        border-collapse: collapse;
+        }
+        td, th {
+        border: 1px solid #ccc;
+        padding: .5em 1em;
+        }
+        th {
+        background-color: #ddd;
+        }
+    </style>
 </head>
 <body>
 <table>
     <thead>
     <tr>
         <th>Title</th>
+        <th>Series</th>
         <th>Author</th>
         <th>ISBN</th>
     </tr>
@@ -18,6 +31,12 @@
     <tr>
         <td>{{ book.title }}</td>
         <td>
+            {% for series in book.series_memberships %}
+            Book {{series.order}} of
+            <a href="?series={{ series.series.title|urlencode}}">{{series.series.title}}</a>
+            {% endfor %}
+        </td>
+        <td>
             {% for author in book.author_list %}
             <a href="?author={{ author.name|urlencode }}">{{ author.name }}</a>
             {% endfor %}
@@ -25,8 +44,12 @@
         <td>{{ book.isbn }}</td>
     </tr>
     {% endfor %}
-
     </tbody>
 </table>
+{% if filtered %}
+<p>
+    <a href="{% url 'index' %}">Clear Filters</a>
+</p>
+{% endif %}
 </body>
 </html>
