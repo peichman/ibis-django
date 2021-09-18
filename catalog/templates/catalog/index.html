@@ -1,20 +1,10 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Catalog Index</title>
-    <style type="text/css">
-        table {
-        border-collapse: collapse;
-        }
-        td, th {
-        border: 1px solid #ccc;
-        padding: .5em 1em;
-        }
-        th {
-        background-color: #ddd;
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="{% static 'catalog/index.css' %}"/>
 </head>
 <body>
 <table>
@@ -31,9 +21,9 @@
     <tr>
         <td>{{ book.title }}</td>
         <td>
-            {% for series in book.series_memberships %}
-            Book {{series.order}} of
-            <a href="?series={{ series.series.title|urlencode}}">{{series.series.title}}</a>
+            {% for serial in book.series_memberships %}
+            <a href="?series={{ serial.series.title|urlencode}}">{{serial.series.title}}</a>
+            (Book {{serial.order}})
             {% endfor %}
         </td>
         <td>
@@ -51,5 +41,8 @@
     <a href="{% url 'index' %}">Clear Filters</a>
 </p>
 {% endif %}
+<p>
+    <a href="{% url 'import_books' %}">Import Book Titles</a>
+</p>
 </body>
 </html>

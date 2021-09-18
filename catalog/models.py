@@ -18,8 +18,9 @@ class Book(models.Model):
     uuid = models.UUIDField('UUID', default=uuid4)
 
     def __str__(self):
-        author_names = ', '.join(str(p) for p in self.author_list())
-        return f'{self.title}, by {author_names}'
+        #author_names = ', '.join(str(p) for p in self.authors.all())
+        #return f'{self.title}, by {author_names}'
+        return self.title
 
     def author_list(self):
         return self.authors.order_by('authorship__order')
