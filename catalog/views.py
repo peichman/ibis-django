@@ -1,12 +1,13 @@
 import re
 
 from django.core.paginator import Paginator
+from django.db.models import OuterRef, Subquery
 from django.http import HttpRequest, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 
 from .forms import ImportForm
-from .models import Book
+from .models import Book, Authorship
 
 
 def index(request: HttpRequest):
@@ -21,7 +22,11 @@ def index(request: HttpRequest):
         booklist = booklist.filter(series__title__in=[request.GET['series']])
         filtered = True
 
-    paginator = Paginator(booklist, 10)
+    first_author = Authorship.objects.filter(book=OuterRef('pk'), order=1)[:1]
+
+    booklist = booklist.order_by(Subquery(first_author.values('person__sort_name')))
+
+    paginator = Paginator(booklist, 20)
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
     return render(request, 'catalog/index.html', context={
