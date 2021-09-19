@@ -44,7 +44,7 @@ def import_books(request: HttpRequest):
         form = ImportForm(request.POST)
         if form.is_valid():
             for title in form.cleaned_data['titles'].splitlines():
-                m = re.match(r'(.*?)\s*(\d{13})$', title)
+                m = re.match(r'(.*?)\s*(\d{10,13})$', title)
                 if m:
                     title = m[1]
                     isbn = m[2]
@@ -55,3 +55,11 @@ def import_books(request: HttpRequest):
                 new_book.save()
                 new_book.authors.add(form.cleaned_data['author'])
             return HttpResponseRedirect(reverse('index'))
+
+
+def set_isbn(request, book_id):
+    book = Book.objects.get(pk=book_id)
+    isbn = request.POST['isbn']
+    book.isbn = isbn
+    book.save()
+    return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))

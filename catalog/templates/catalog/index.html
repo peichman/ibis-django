@@ -31,7 +31,18 @@
             <a href="?author={{ author.name|urlencode }}">{{ author.name }}</a>
             {% endfor %}
         </td>
-        <td>{{ book.isbn }}</td>
+        <td>
+            {% if book.isbn %}
+            {{ book.isbn }}
+            {% else %}
+            <form method="post" action="{% url 'set_isbn' book.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="redirect" value="{{ request.get_full_path }}"/>
+                <input type="text" name="isbn"/>
+                <button>Set ISBN</button>
+            </form>
+            {% endif %}
+        </td>
     </tr>
     {% endfor %}
     </tbody>
