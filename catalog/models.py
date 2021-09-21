@@ -36,6 +36,9 @@ class Series(models.Model):
     def __str__(self):
         return self.title
 
+    class Meta:
+        verbose_name_plural = "series"
+
 
 class Authorship(models.Model):
     person = models.ForeignKey(Person, on_delete=models.CASCADE)

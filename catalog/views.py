@@ -68,52 +68,34 @@ def import_by_isbn(request: HttpRequest):
     if request.method == 'GET':
         return render(request, 'catalog/import_by_isbn.html')
     elif request.method == 'POST':
-        new_books = {}
-        new_persons = {}
         if 'isbns' in request.POST:
             isbns = getlines(request.POST['isbns'])
             sort_name_format = '{last}, {title} {first} {suffix}'
             CONSTANTS.string_format = sort_name_format
 
             for isbn in isbns:
+                book, book_is_new = Book.objects.get_or_create(isbn=isbn)
+                if not book_is_new:
+                    # skip this book, it is already in the catalog
+                    # TODO: log this
+                    continue
+
                 metadata = isbnlib.meta(isbn)
+                book.title = metadata['Title']
+                book.save()
+
                 author_names = [HumanName(author) for author in metadata['Authors']]
-                title = metadata['Title']
-                # year = metadata['Year']
-                # publisher = metadata['Publisher']
 
-                book = {
-                    'title': title,
-                    'isbn': isbn,
-                    'authors': []
-                }
-                # TODO: check isbn against current database, skip existing
+                authors = []
                 for author_name in author_names:
-                    name = author_name.original
-                    try:
-                        existing_author = Person.objects.get(name=name)
-                        book['authors'].append(existing_author.id)
-                    except Person.DoesNotExist:
-                        sort_name = str(author_name)
-                        if name not in new_persons:
-                            new_persons[name] = {'name': name, 'sort_name': sort_name, 'isbns': []}
-                        new_persons[name]['isbns'].append(isbn)
-                        book['authors'].append(name)
+                    author, _is_new = Person.objects.get_or_create(
+                        name=author_name.original,
+                        defaults={'sort_name': str(author_name)}
+                    )
+                    authors.append(author)
 
-                new_books[isbn] = book
-        for person_data in new_persons.values():
-            person = Person(name=person_data['name'], sort_name=person_data['sort_name'])
-            person.save()
-            for isbn in person_data['isbns']:
-                book = new_books[isbn]
-                i = book['authors'].index(person.name)
-                book['authors'][i] = person.id
-
-        for book_data in new_books.values():
-            book = Book(title=book_data['title'], isbn=book_data['isbn'])
-            book.save()
-            for author_id in book_data['authors']:
-                book.authors.add(author_id)
+                for n, author in enumerate(authors, 1):
+                    book.authors.add(author, through_defaults={'order': n})
 
         return HttpResponseRedirect(reverse('index'))
 
