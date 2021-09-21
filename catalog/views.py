@@ -57,6 +57,11 @@ def import_books(request: HttpRequest):
             return HttpResponseRedirect(reverse('index'))
 
 
+def import_by_isbn(request):
+    if request.method == 'GET':
+        return render(request, 'catalog/import_by_isbn.html')
+
+
 def set_isbn(request, book_id):
     book = Book.objects.get(pk=book_id)
     isbn = request.POST['isbn']
