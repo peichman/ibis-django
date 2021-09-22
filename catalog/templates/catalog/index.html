@@ -38,7 +38,7 @@
             <form method="post" action="{% url 'set_isbn' book.id %}">
                 {% csrf_token %}
                 <input type="hidden" name="redirect" value="{{ request.get_full_path }}"/>
-                <input type="text" name="isbn"/>
+                {{ isbn_form.isbn }}
                 <button>Set ISBN</button>
             </form>
             {% endif %}
@@ -71,7 +71,12 @@
 {% endif %}
 <div>
     <a href="{% url 'import_books' %}">Import Book Titles</a> —
-    <a href="{% url 'import_by_isbn' %}">Import by ISBNs</a>
+    <a href="{% url 'import_by_isbn' %}">Import by ISBNs</a> —
+    <form class="add-by-isbn" method="post" action="{% url 'import_by_isbn' %}">
+        {% csrf_token %}
+        Add by ISBN: {{ isbn_form }}
+        <button>Submit</button>
+    </form>
 </div>
 </body>
 </html>

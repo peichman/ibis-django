@@ -4,10 +4,16 @@ table {
 td, th {
     border: 1px solid #ccc;
     padding: .5em 1em;
+    max-width: 40em;
+    line-height: 1.25;
 }
 th {
     background-color: #ddd;
 }
 div {
     margin: 1em 0;
+}
+
+.add-by-isbn {
+    display: inline;
 }

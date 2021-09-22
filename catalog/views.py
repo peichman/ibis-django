@@ -6,10 +6,11 @@ from django.db.models import OuterRef, Subquery
 from django.http import HttpRequest, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
+from isbnlib import is_isbn10, is_isbn13
 from nameparser import HumanName
 from nameparser.config import CONSTANTS
 
-from .forms import ImportForm
+from .forms import ImportForm, SingleISBNForm
 from .models import Book, Authorship, Person
 
 
@@ -39,7 +40,8 @@ def index(request: HttpRequest):
     return render(request, 'catalog/index.html', context={
         'page_obj': page_obj,
         'books': booklist,
-        'filtered': filtered
+        'filtered': filtered,
+        'isbn_form': SingleISBNForm()
     })
 
 
@@ -68,34 +70,46 @@ def import_by_isbn(request: HttpRequest):
     if request.method == 'GET':
         return render(request, 'catalog/import_by_isbn.html')
     elif request.method == 'POST':
-        if 'isbns' in request.POST:
+        if 'isbn' in request.POST:
+            isbns = [request.POST['isbn']]
+        elif 'isbns' in request.POST:
             isbns = getlines(request.POST['isbns'])
-            sort_name_format = '{last}, {title} {first} {suffix}'
-            CONSTANTS.string_format = sort_name_format
+        else:
+            isbns = []
 
-            for isbn in isbns:
-                book, book_is_new = Book.objects.get_or_create(isbn=isbn)
-                if not book_is_new:
-                    # skip this book, it is already in the catalog
-                    # TODO: log this
-                    continue
+        sort_name_format = '{last}, {title} {first} {suffix}'
+        CONSTANTS.string_format = sort_name_format
 
-                metadata = isbnlib.meta(isbn)
-                book.title = metadata['Title']
-                book.save()
+        for isbn in isbns:
+            if not(is_isbn10(isbn) or is_isbn13(isbn)):
+                # skip this, not an ISBN
+                # TODO: log this
+                continue
 
-                author_names = [HumanName(author) for author in metadata['Authors']]
+            book, book_is_new = Book.objects.get_or_create(isbn=isbn)
 
-                authors = []
-                for author_name in author_names:
-                    author, _is_new = Person.objects.get_or_create(
-                        name=author_name.original,
-                        defaults={'sort_name': str(author_name)}
-                    )
-                    authors.append(author)
+            if not book_is_new:
+                # skip this book, it is already in the catalog
+                # TODO: log this
+                continue
 
-                for n, author in enumerate(authors, 1):
-                    book.authors.add(author, through_defaults={'order': n})
+            metadata = isbnlib.meta(isbn)
+            # TODO: what to do if metadata is empty?
+            book.title = metadata.get('Title', isbn)
+            book.save()
+
+            author_names = [HumanName(author) for author in metadata['Authors']]
+
+            authors = []
+            for author_name in author_names:
+                author, _is_new = Person.objects.get_or_create(
+                    name=author_name.original,
+                    defaults={'sort_name': str(author_name)}
+                )
+                authors.append(author)
+
+            for n, author in enumerate(authors, 1):
+                book.authors.add(author, through_defaults={'order': n})
 
         return HttpResponseRedirect(reverse('index'))
 
