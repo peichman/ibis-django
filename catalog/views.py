@@ -12,7 +12,7 @@ from nameparser.config import CONSTANTS
 from titlecase import titlecase
 
 from .forms import ImportForm, SingleISBNForm
-from .models import Book, Authorship, Person
+from .models import Book, Credit, Person
 
 
 def getlines(text: str) -> list[str]:
@@ -31,7 +31,7 @@ def index(request: HttpRequest):
         booklist = booklist.filter(series__title__in=[request.GET['series']])
         filtered = True
 
-    first_author = Authorship.objects.filter(book=OuterRef('pk'), order=1)[:1]
+    first_author = Credit.objects.filter(book=OuterRef('pk'), order=1)[:1]
 
     booklist = booklist.order_by(Subquery(first_author.values('person__sort_name')), 'publication_date')
 
