@@ -14,7 +14,7 @@ class AuthorshipInline(admin.TabularInline):
 
 
 class BookAdmin(admin.ModelAdmin):
-    fields = ['title', 'isbn', 'uuid']
+    fields = ['title', 'subtitle', 'isbn', 'publication_date']
     inlines = [AuthorshipInline]
     search_fields = ['title']
 

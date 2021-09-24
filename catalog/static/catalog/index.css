@@ -5,7 +5,7 @@ td, th {
     border: 1px solid #ccc;
     padding: .5em 1em;
     max-width: 40em;
-    line-height: 1.25;
+    line-height: 1.33;
 }
 th {
     background-color: #ddd;
@@ -16,4 +16,9 @@ div {
 
 .add-by-isbn {
     display: inline;
+}
+.book-subtitle {
+    display: block;
+    color: #999;
+    margin-left: .5em;
 }

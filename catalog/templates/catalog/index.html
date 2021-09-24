@@ -13,13 +13,17 @@
         <th>Title</th>
         <th>Series</th>
         <th>Author</th>
+        <th>Published</th>
         <th>ISBN</th>
     </tr>
     </thead>
     <tbody>
     {% for book in page_obj %}
     <tr>
-        <td>{{ book.title }}</td>
+        <td>
+            {{ book.title }}
+            {% if book.subtitle %}<span class="book-subtitle">{{ book.subtitle }}</span>{% endif %}
+        </td>
         <td>
             {% for serial in book.series_memberships %}
             <a href="?series={{ serial.series.title|urlencode}}">{{serial.series.title}}</a>
@@ -30,6 +34,9 @@
             {% for author in book.author_list %}
             <a href="?author={{ author.name|urlencode }}">{{ author.name }}</a>
             {% endfor %}
+        </td>
+        <td>
+            {{ book.publication_date }}
         </td>
         <td>
             {% if book.isbn %}

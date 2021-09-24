@@ -13,8 +13,10 @@ class Person(models.Model):
 
 class Book(models.Model):
     title = models.CharField(max_length=1024)
+    subtitle = models.CharField(max_length=1024, blank=True)
     authors = models.ManyToManyField(Person, through='Authorship', related_name='books')
     isbn = models.CharField('ISBN', max_length=13, blank=True)
+    publication_date = models.CharField(max_length=32)
     uuid = models.UUIDField('UUID', default=uuid4)
 
     def __str__(self):

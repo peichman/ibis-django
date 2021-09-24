@@ -9,6 +9,7 @@ from django.urls import reverse
 from isbnlib import is_isbn10, is_isbn13
 from nameparser import HumanName
 from nameparser.config import CONSTANTS
+from titlecase import titlecase
 
 from .forms import ImportForm, SingleISBNForm
 from .models import Book, Authorship, Person
@@ -95,10 +96,17 @@ def import_by_isbn(request: HttpRequest):
 
             metadata = isbnlib.meta(isbn)
             # TODO: what to do if metadata is empty?
-            book.title = metadata.get('Title', isbn)
+            title = metadata.get('Title', isbn)
+            if ' - ' in title:
+                title, subtitle = title.split(' - ', 2)
+                book.title = titlecase(title)
+                book.subtitle = titlecase(subtitle)
+            else:
+                book.title = titlecase(title)
+            book.publication_date = metadata.get('Year', '?')
             book.save()
 
-            author_names = [HumanName(author) for author in metadata['Authors']]
+            author_names = [HumanName(author) for author in metadata.get('Authors', [])]
 
             authors = []
             for author_name in author_names:
