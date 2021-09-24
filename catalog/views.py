@@ -33,7 +33,7 @@ def index(request: HttpRequest):
 
     first_author = Authorship.objects.filter(book=OuterRef('pk'), order=1)[:1]
 
-    booklist = booklist.order_by(Subquery(first_author.values('person__sort_name')))
+    booklist = booklist.order_by(Subquery(first_author.values('person__sort_name')), 'publication_date')
 
     paginator = Paginator(booklist, 20)
     page_obj = paginator.get_page(request.GET.get('page', 1))
@@ -119,7 +119,7 @@ def import_by_isbn(request: HttpRequest):
             for n, author in enumerate(authors, 1):
                 book.authors.add(author, through_defaults={'order': n})
 
-        return HttpResponseRedirect(reverse('index'))
+        return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
 
 
 def set_isbn(request, book_id):
