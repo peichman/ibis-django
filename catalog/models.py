@@ -43,9 +43,15 @@ class Series(models.Model):
 
 
 class Credit(models.Model):
+    class Role(models.TextChoices):
+        AUTHOR = 'author'
+        EDITOR = 'editor'
+        TRANSLATOR = 'translator'
+
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     order = models.PositiveIntegerField(default=1)
+    role = models.CharField(max_length=16, choices=Role.choices, default=Role.AUTHOR)
 
     def __str__(self):
         return f'{self.person.name} on {self.book.title}'
