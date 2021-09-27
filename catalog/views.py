@@ -19,12 +19,19 @@ def getlines(text: str) -> list[str]:
     return list(str(s) for s in filter(len, (map(str.strip, text.splitlines()))))
 
 
+def split_title(title: str, separator: str = ' - ') -> list[str, str]:
+    if separator in title:
+        return [titlecase(s) for s in title.split(separator, 2)]
+    else:
+        return [titlecase(title), '']
+
+
 def index(request: HttpRequest):
     booklist = Book.objects.all()
     filtered = False
 
     if 'author' in request.GET:
-        booklist = booklist.filter(authors__name__in=[request.GET['author']])
+        booklist = booklist.filter(credits__name__in=[request.GET['author']], credits__role=Credit.Role.AUTHOR)
         filtered = True
 
     if 'series' in request.GET:
@@ -33,14 +40,16 @@ def index(request: HttpRequest):
 
     first_author = Credit.objects.filter(book=OuterRef('pk'), order=1)[:1]
 
-    booklist = booklist.order_by(Subquery(first_author.values('person__sort_name')), 'publication_date')
+    booklist = booklist.order_by(
+        Subquery(first_author.values('person__sort_name')),
+        'publication_date'
+    )
 
     paginator = Paginator(booklist, 20)
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
     return render(request, 'catalog/index.html', context={
         'page_obj': page_obj,
-        'books': booklist,
         'filtered': filtered,
         'isbn_form': SingleISBNForm()
     })
@@ -63,7 +72,7 @@ def import_books(request: HttpRequest):
 
                 new_book = Book(title=title, isbn=isbn)
                 new_book.save()
-                new_book.authors.add(form.cleaned_data['author'])
+                new_book.credits.add(form.cleaned_data['author'])
             return HttpResponseRedirect(reverse('index'))
 
 
@@ -96,28 +105,19 @@ def import_by_isbn(request: HttpRequest):
 
             metadata = isbnlib.meta(isbn)
             # TODO: what to do if metadata is empty?
-            title = metadata.get('Title', isbn)
-            if ' - ' in title:
-                title, subtitle = title.split(' - ', 2)
-                book.title = titlecase(title)
-                book.subtitle = titlecase(subtitle)
-            else:
-                book.title = titlecase(title)
+
+            book.title, book.subtitle = split_title(metadata.get('Title', isbn))
             book.publication_date = metadata.get('Year', '?')
             book.save()
 
             author_names = [HumanName(author) for author in metadata.get('Authors', [])]
 
-            authors = []
             for author_name in author_names:
                 author, _is_new = Person.objects.get_or_create(
                     name=author_name.original,
                     defaults={'sort_name': str(author_name)}
                 )
-                authors.append(author)
-
-            for n, author in enumerate(authors, 1):
-                book.authors.add(author, through_defaults={'order': n})
+                book.add_author(author)
 
         return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
 

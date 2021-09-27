@@ -14,20 +14,23 @@ class Person(models.Model):
 class Book(models.Model):
     title = models.CharField(max_length=1024)
     subtitle = models.CharField(max_length=1024, blank=True)
-    authors = models.ManyToManyField(Person, through='Credit', related_name='books')
+    credits = models.ManyToManyField(Person, through='Credit', related_name='books')
     isbn = models.CharField('ISBN', max_length=13, blank=True)
     publication_date = models.CharField(max_length=32)
     uuid = models.UUIDField('UUID', default=uuid4)
 
     def __str__(self):
-        #author_names = ', '.join(str(p) for p in self.authors.all())
-        #return f'{self.title}, by {author_names}'
-        return self.title
+        author_names = ', '.join(str(p) for p in self.authors)
+        return f'{self.title}, by {author_names}'
 
-    def author_list(self):
-        return self.authors.order_by('credit__order')
+    @property
+    def authors(self) -> list[Person]:
+        return self.credits.filter(credit__role=Credit.Role.AUTHOR).order_by('credit__order')
 
-    def series_memberships(self):
+    def add_author(self, author: Person, order: int = 1):
+        self.credits.add(author, through_defaults={'role': Credit.Role.AUTHOR, 'order': order})
+
+    def series_memberships(self) -> list['SeriesMembership']:
         return self.series.through.objects.filter(book=self)
 
 
@@ -47,6 +50,7 @@ class Credit(models.Model):
         AUTHOR = 'author'
         EDITOR = 'editor'
         TRANSLATOR = 'translator'
+        ILLUSTRATOR = 'illustrator'
 
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
@@ -54,7 +58,7 @@ class Credit(models.Model):
     role = models.CharField(max_length=16, choices=Role.choices, default=Role.AUTHOR)
 
     def __str__(self):
-        return f'{self.person.name} on {self.book.title}'
+        return f'{self.person.name}, {self.role} of {self.book.title}'
 
 
 class SeriesMembership(models.Model):

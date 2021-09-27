@@ -32,7 +32,7 @@
             {% endfor %}
         </td>
         <td>
-            {% for author in book.author_list %}
+            {% for author in book.authors %}
             <a href="?author={{ author.name|urlencode }}">{{ author.name }}</a>
             {% endfor %}
         </td>
