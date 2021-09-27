@@ -10,6 +10,9 @@ td, th {
 th {
     background-color: #ddd;
 }
+td {
+    vertical-align: top;
+}
 div {
     margin: 1em 0;
 }

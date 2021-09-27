@@ -2,6 +2,7 @@ from uuid import uuid4
 
 from django.db import models
 from django.db.models import QuerySet
+from isbnlib import classify
 
 
 class Person(models.Model):
@@ -15,10 +16,14 @@ class Person(models.Model):
 class Book(models.Model):
     title = models.CharField(max_length=1024)
     subtitle = models.CharField(max_length=1024, blank=True)
-    credits = models.ManyToManyField(Person, through='Credit', related_name='books')
+    persons = models.ManyToManyField(Person, through='Credit', related_name='books')
     isbn = models.CharField('ISBN', max_length=13, blank=True)
     publication_date = models.CharField(max_length=32)
     uuid = models.UUIDField('UUID', default=uuid4)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._classifiers = None
 
     def __str__(self):
         author_names = ', '.join(str(p) for p in self.authors)
@@ -26,19 +31,30 @@ class Book(models.Model):
 
     @property
     def authors(self) -> QuerySet[Person]:
-        return self.credits.filter(credit__role=Credit.Role.AUTHOR).order_by('credit__order')
+        return self.persons.filter(credit__role=Credit.Role.AUTHOR).order_by('credit__order')
+
+    def credits(self):
+        return Credit.objects.filter(book=self.id).order_by('order')
 
     def __getattr__(self, item):
         if item in Credit.Role:
-            return self.credits.filter(credit__role=item).order_by('credit__order')
+            return self.persons.filter(credit__role=item).order_by('credit__order')
         else:
             raise AttributeError(f"'{self.__class__}' object has no attribute '{item}'")
 
     def add_author(self, author: Person, order: int = 1):
-        self.credits.add(author, through_defaults={'role': Credit.Role.AUTHOR, 'order': order})
+        self.persons.add(author, through_defaults={'role': Credit.Role.AUTHOR, 'order': order})
 
     def series_memberships(self) -> list['SeriesMembership']:
         return self.series.through.objects.filter(book=self)
+
+    @property
+    def classifiers(self):
+        if not self.isbn:
+            return {}
+        if self._classifiers is None:
+            self._classifiers = classify(self.isbn)
+        return self._classifiers
 
 
 class Series(models.Model):

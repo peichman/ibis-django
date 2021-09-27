@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ book }}</title>
+  <link rel="stylesheet" type="text/css" href="{% static 'catalog/book.css' %}"/>
+</head>
+<body>
+<h1>{{ book }}</h1>
+
+<div class="book-metadata">
+  <h2>Metadata</h2>
+  <dl>
+    <dt>Title</dt>
+    <dd>{{ book.title }}</dd>
+    {% if book.subtitle %}
+    <dt>Subtitle</dt>
+    <dd>{{ book.subtitle }}</dd>
+    {% endif %}
+    {% for credit in book.credits.all %}
+    <dt>{{ credit.role.capitalize }}</dt>
+    <dd>{{ credit.person.name }}</dd>
+    {% endfor %}
+
+    {% for serial in book.series_memberships %}
+    <dt>Series</dt>
+    <dd>{{ serial.series.title }} (Book {{ serial.order }})</dd>
+    {% endfor %}
+
+    <dt>Published</dt>
+    <dd>{{ book.publication_date }}</dd>
+    <dt>ISBN</dt>
+    <dd>{{ book.isbn }}</dd>
+    <dt>UUID</dt>
+    <dd>{{ book.uuid }}</dd>
+  </dl>
+</div>
+
+{% if book.classifiers %}
+<div class="book-classifiers">
+  <h2>Classifiers</h2>
+  <dl>
+    {% for type, value in book.classifiers.items %}
+    <dt>{{ type.upper }}</dt>
+    <dd>
+      {% if type == 'fast' %}
+      <dl>
+        {% for k, v in value.items %}
+        <dt>{{ k }}</dt>
+        <dd>{{ v }}</dd>
+        {% endfor %}
+      </dl>
+      {% else %}
+      {{ value }}
+      {% endif %}
+    </dd>
+    {% endfor %}
+  </dl>
+</div>
+{% endif %}
+
+<p>
+  <a href="{% url 'index' %}">Catalog Index</a>
+</p>
+</body>
+</html>

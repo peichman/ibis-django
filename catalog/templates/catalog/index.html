@@ -22,7 +22,9 @@
     {% for book in page_obj %}
     <tr>
         <td>
-            {{ book.title }}
+            <a href="{% url 'show_book' book.id %}">
+                {{ book.title }}
+            </a>
             {% if book.subtitle %}<span class="book-subtitle">{{ book.subtitle }}</span>{% endif %}
         </td>
         <td>
