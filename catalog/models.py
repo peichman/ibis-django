@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 from django.db import models
+from django.db.models import QuerySet
 
 
 class Person(models.Model):
@@ -24,8 +25,14 @@ class Book(models.Model):
         return f'{self.title}, by {author_names}'
 
     @property
-    def authors(self) -> list[Person]:
+    def authors(self) -> QuerySet[Person]:
         return self.credits.filter(credit__role=Credit.Role.AUTHOR).order_by('credit__order')
+
+    def __getattr__(self, item):
+        if item in Credit.Role:
+            return self.credits.filter(credit__role=item).order_by('credit__order')
+        else:
+            raise AttributeError(f"'{self.__class__}' object has no attribute '{item}'")
 
     def add_author(self, author: Person, order: int = 1):
         self.credits.add(author, through_defaults={'role': Credit.Role.AUTHOR, 'order': order})
