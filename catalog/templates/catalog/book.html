@@ -20,7 +20,11 @@
     {% endif %}
     {% for credit in book.credits.all %}
     <dt>{{ credit.role.capitalize }}</dt>
-    <dd>{{ credit.person.name }}</dd>
+    <dd>
+      <a href="{% url 'show_person' credit.person.id %}">
+        {{ credit.person.name }}
+      </a>
+    </dd>
     {% endfor %}
 
     {% for serial in book.series_memberships %}

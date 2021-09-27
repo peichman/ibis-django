@@ -35,10 +35,6 @@ def index(request: HttpRequest):
             booklist = booklist.filter(credit__role=role, persons__name__in=[request.GET[role]])
             filtered = True
 
-    #if 'author' in request.GET:
-    #    booklist = booklist.filter(credit__role=Credit.Role.ILLUSTRATOR, persons__name__in=[request.GET['author']])
-    #    filtered = True
-
     if 'series' in request.GET:
         booklist = booklist.filter(series__title__in=[request.GET['series']])
         filtered = True
@@ -64,6 +60,14 @@ def show_book(request: HttpRequest, book_id):
     book = Book.objects.get(pk=book_id)
     return render(request, 'catalog/book.html', context={
         'book': book
+    })
+
+
+def show_person(request: HttpRequest, person_id):
+    person = Person.objects.get(pk=person_id)
+    return render(request, 'catalog/person.html', context={
+        'person': person,
+        'credits': person.credits.order_by('book__publication_date')
     })
 
 

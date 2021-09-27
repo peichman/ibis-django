@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ person.name }}</title>
+</head>
+<body>
+<h1>{{ person.name }}</h1>
+
+<ul>
+    {% for credit in credits %}
+    <li>
+        <a href="{% url 'show_book' credit.book.id %}">{{ credit.book.title }}</a>
+        ({{ credit.role.capitalize }}, {{ credit.book.publication_date }})
+    </li>
+    {% endfor %}
+</ul>
+
+<p>
+    <a href="{% url 'index' %}">Catalog Index</a>
+</p>
+</body>
+</html>

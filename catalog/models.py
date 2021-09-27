@@ -12,6 +12,10 @@ class Person(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def credits(self):
+        return Credit.objects.filter(person=self.id)
+
 
 class Book(models.Model):
     title = models.CharField(max_length=1024)
