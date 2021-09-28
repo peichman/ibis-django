@@ -12,7 +12,7 @@
     <thead>
     <tr>
         <th>Title</th>
-        <th>Series</th>
+        <!-- th>Series</th -->
         <th>Author</th>
         <th>Published</th>
         <th>ISBN</th>
@@ -22,15 +22,15 @@
     {% for book in page_obj %}
     <tr>
         <td>
-            <a href="{% url 'show_book' book.id %}">
-                {{ book.title }}
-            </a>
+            <span class="book-title">
+                <a href="{% url 'show_book' book.id %}">
+                    {{ book.title }}
+                </a>
+            </span>
             {% if book.subtitle %}<span class="book-subtitle">{{ book.subtitle }}</span>{% endif %}
-        </td>
-        <td>
+
             {% for serial in book.series_memberships %}
-            <a href="?series={{ serial.series.title|urlencode}}">{{serial.series.title}}</a>
-            (Book {{serial.order}})
+            <span class="book-series"><a href="?series={{ serial.series.title|urlencode}}">{{serial.series.title}}:</a> Book {{serial.order}}</span>
             {% endfor %}
         </td>
         <td>

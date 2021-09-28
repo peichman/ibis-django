@@ -2,16 +2,17 @@ table {
     border-collapse: collapse;
 }
 td, th {
-    border: 1px solid #ccc;
-    padding: .5em 1em;
+    padding: 0 .5em;
     max-width: 40em;
-    line-height: 1.33;
+    line-height: 1.5;
 }
 th {
-    background-color: #ddd;
+    text-align: left;
+    border-bottom: 2px solid #999;
 }
 td {
     vertical-align: top;
+    border-bottom: 1px solid #ccc;
 }
 div {
     margin: 1em 0;
@@ -20,8 +21,14 @@ div {
 .add-by-isbn {
     display: inline;
 }
+.book-title {
+    font-weight: bold;
+}
+.book-series,
 .book-subtitle {
-    display: block;
     color: #999;
-    margin-left: .5em;
+}
+.book-series:before,
+.book-subtitle:before {
+    content: " — ";
 }
