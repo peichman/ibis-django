@@ -2,7 +2,7 @@ dl {
 	display: grid;
 	grid-template-areas: "key value";
 	grid-row-gap: .5em;
-	grid-template-columns: 6em 1fr;
+	grid-template-columns: 10em 1fr;
 	margin: 0;
 }
 dt {
