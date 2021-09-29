@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 {% load static %}
+{% load abbr %}
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -46,7 +47,7 @@
   <h2>Classifiers</h2>
   <dl>
     {% for type, value in book.classifiers.items %}
-    <dt>{{ type.upper }}</dt>
+    <dt>{{ type.upper|abbr }}</dt>
     <dd>
       {% if type == 'fast' %}
       <dl>
