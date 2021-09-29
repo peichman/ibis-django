@@ -1,20 +1,38 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>{{ person.name }}</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'catalog/index.css' %}"/>
 </head>
 <body>
 <h1>{{ person.name }}</h1>
 
-<ul>
+<table>
+    <thead>
+    <tr>
+        <th>Book</th>
+        <th>Role</th>
+        <th>Publication Date</th>
+    </tr>
+    </thead>
+    <tbody>
     {% for credit in credits %}
-    <li>
-        <a href="{% url 'show_book' credit.book.id %}">{{ credit.book.title }}</a>
-        ({{ credit.role.capitalize }}, {{ credit.book.publication_date }})
-    </li>
+    <tr>
+        <td>
+            <a href="{% url 'show_book' credit.book.id %}">{{ credit.book.title }}</a>
+        </td>
+        <td>
+            {{ credit.role.capitalize }}
+        </td>
+        <td>
+            {{ credit.book.publication_date }}
+        </td>
+    </tr>
     {% endfor %}
-</ul>
+    </tbody>
+</table>
 
 <p>
     <a href="{% url 'index' %}">Catalog Index</a>

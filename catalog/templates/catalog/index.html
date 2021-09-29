@@ -23,14 +23,12 @@
     <tr>
         <td>
             <span class="book-title">
-                <a href="{% url 'show_book' book.id %}">
-                    {{ book.title }}
-                </a>
+                <a href="{% url 'show_book' book.id %}">{{ book.title }}</a>
             </span>
             {% if book.subtitle %}<span class="book-subtitle">{{ book.subtitle }}</span>{% endif %}
 
             {% for serial in book.series_memberships %}
-            <span class="book-series"><a href="?series={{ serial.series.title|urlencode}}">{{serial.series.title}}:</a> Book {{serial.order}}</span>
+            <span class="book-series"><a href="?series={{ serial.series.title|urlencode}}">{{serial.series.title}}</a> Book {{serial.order}}</span>
             {% endfor %}
         </td>
         <td>
