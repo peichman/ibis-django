@@ -40,16 +40,7 @@
             {{ book.publication_date }}
         </td>
         <td>
-            {% if book.isbn %}
             {{ book.isbn }}
-            {% else %}
-            <form method="post" action="{% url 'set_isbn' book.id %}">
-                {% csrf_token %}
-                {% redirect_tag %}
-                {{ isbn_form.isbn }}
-                <button>Set ISBN</button>
-            </form>
-            {% endif %}
         </td>
     </tr>
     {% endfor %}
