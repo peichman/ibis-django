@@ -14,7 +14,7 @@ class CreditInline(admin.TabularInline):
 
 
 class BookAdmin(admin.ModelAdmin):
-    fields = ['title', 'subtitle', 'isbn', 'publication_date']
+    fields = ['title', 'subtitle', 'isbn', 'publisher', 'publication_date']
     inlines = [CreditInline]
     search_fields = ['title']
 

@@ -22,6 +22,7 @@ class Book(models.Model):
     subtitle = models.CharField(max_length=1024, blank=True)
     persons = models.ManyToManyField(Person, through='Credit', related_name='books')
     isbn = models.CharField('ISBN', max_length=13, blank=True)
+    publisher = models.CharField(max_length=256)
     publication_date = models.CharField(max_length=32)
     uuid = models.UUIDField('UUID', default=uuid4)
 

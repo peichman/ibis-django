@@ -21,7 +21,7 @@ def getlines(text: str) -> list[str]:
 
 def split_title(title: str, separator: str = ' - ') -> list[str, str]:
     if separator in title:
-        return [titlecase(s) for s in title.split(separator, 2)]
+        return [titlecase(s) for s in title.split(separator, 1)]
     else:
         return [titlecase(title), '']
 
@@ -123,7 +123,8 @@ def import_by_isbn(request: HttpRequest):
             # TODO: what to do if metadata is empty?
 
             book.title, book.subtitle = split_title(metadata.get('Title', isbn))
-            book.publication_date = metadata.get('Year', '?')
+            book.publisher = metadata.get('Publisher') or '?'
+            book.publication_date = metadata.get('Year') or '?'
             book.save()
 
             author_names = [HumanName(author) for author in metadata.get('Authors', [])]
