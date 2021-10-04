@@ -1,4 +1,5 @@
 import re
+from urllib.parse import urlencode
 
 import isbnlib
 from django.core.paginator import Paginator
@@ -26,18 +27,30 @@ def split_title(title: str, separator: str = ' - ') -> list[str, str]:
         return [titlecase(title), '']
 
 
+class Filters:
+    def __init__(self, page=None, **filters):
+        self.filters = filters
+        self.page = page
+
+    def at_page(self, page=None):
+        if page is None:
+            return self.filters
+        else:
+            return {**self.filters, 'page': page}
+
+
 def index(request: HttpRequest):
     booklist = Book.objects.all()
-    filtered = False
+    filters = {}
 
     for role in Credit.Role.values:
         if role in request.GET:
             booklist = booklist.filter(credit__role=role, persons__name__in=[request.GET[role]])
-            filtered = True
+            filters[role] = request.GET[role]
 
     if 'series' in request.GET:
         booklist = booklist.filter(series__title__in=[request.GET['series']])
-        filtered = True
+        filters['series'] = request.GET['series']
 
     first_author = Credit.objects.filter(book=OuterRef('pk'), order=1)[:1]
 
@@ -48,10 +61,25 @@ def index(request: HttpRequest):
 
     paginator = Paginator(booklist, 20)
     page_obj = paginator.get_page(request.GET.get('page', 1))
+    filter_params = Filters(**filters)
+
+    page_link = {}
+    if page_obj.has_previous():
+        page_link.update({
+            'first': urlencode(filter_params.at_page(1)),
+            'previous': urlencode(filter_params.at_page(page_obj.previous_page_number()))
+        })
+
+    if page_obj.has_next():
+        page_link.update({
+            'next': urlencode(filter_params.at_page(page_obj.next_page_number())),
+            'last': urlencode(filter_params.at_page(paginator.num_pages))
+        })
 
     return render(request, 'catalog/index.html', context={
         'page_obj': page_obj,
-        'filtered': filtered,
+        'filtered': len(filters) > 0,
+        'page_link': page_link,
         'isbn_form': SingleISBNForm()
     })
 

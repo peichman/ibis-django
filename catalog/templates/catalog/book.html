@@ -48,18 +48,18 @@
   <dl>
     {% for type, value in book.classifiers.items %}
     <dt>{{ type.upper|abbr }}</dt>
+    {% if type == 'fast' %}
     <dd>
-      {% if type == 'fast' %}
       <dl>
         {% for k, v in value.items %}
         <dt>{{ k }}</dt>
         <dd>{{ v }}</dd>
         {% endfor %}
       </dl>
-      {% else %}
-      {{ value }}
-      {% endif %}
     </dd>
+    {% else %}
+    <dd>{{ value }}</dd>
+    {% endif %}
     {% endfor %}
   </dl>
 </div>
