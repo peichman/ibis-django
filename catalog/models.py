@@ -17,6 +17,13 @@ class Person(models.Model):
         return Credit.objects.filter(person=self.id)
 
 
+class Tag(models.Model):
+    value = models.CharField(max_length=1024)
+
+    def __str__(self):
+        return self.value
+
+
 class Book(models.Model):
     title = models.CharField(max_length=1024)
     subtitle = models.CharField(max_length=1024, blank=True)
@@ -24,6 +31,7 @@ class Book(models.Model):
     isbn = models.CharField('ISBN', max_length=13, blank=True)
     publisher = models.CharField(max_length=256)
     publication_date = models.CharField(max_length=32)
+    tags = models.ManyToManyField(Tag, related_name='books')
     uuid = models.UUIDField('UUID', default=uuid4)
 
     def __init__(self, *args, **kwargs):

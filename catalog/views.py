@@ -52,6 +52,10 @@ def index(request: HttpRequest):
         booklist = booklist.filter(series__title__in=[request.GET['series']])
         filters['series'] = request.GET['series']
 
+    if 'tag' in request.GET:
+        booklist = booklist.filter(tags__value__contains=request.GET['tag'])
+        filters['tag'] = request.GET['tag']
+
     first_author = Credit.objects.filter(book=OuterRef('pk'), order=1)[:1]
 
     booklist = booklist.order_by(

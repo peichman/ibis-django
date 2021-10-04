@@ -1,10 +1,14 @@
 from django.contrib import admin
 
-from .models import Book, Person, Credit, Series, SeriesMembership
+from .models import Book, Person, Credit, Series, SeriesMembership, Tag
 
 
 class PersonAdmin(admin.ModelAdmin):
     search_fields = ['name']
+
+
+class TagAdmin(admin.ModelAdmin):
+    search_fields = ['value']
 
 
 class CreditInline(admin.TabularInline):
@@ -13,9 +17,15 @@ class CreditInline(admin.TabularInline):
     autocomplete_fields = ['person']
 
 
+class TaggingInline(admin.StackedInline):
+    model = Book.tags.through
+    extra = 1
+    autocomplete_fields = ['tag']
+
+
 class BookAdmin(admin.ModelAdmin):
     fields = ['title', 'subtitle', 'isbn', 'publisher', 'publication_date']
-    inlines = [CreditInline]
+    inlines = [TaggingInline, CreditInline]
     search_fields = ['title']
 
 
@@ -33,3 +43,4 @@ class SeriesAdmin(admin.ModelAdmin):
 admin.site.register(Book, BookAdmin)
 admin.site.register(Person, PersonAdmin)
 admin.site.register(Series, SeriesAdmin)
+admin.site.register(Tag, TagAdmin)

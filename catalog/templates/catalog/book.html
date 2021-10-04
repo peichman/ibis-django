@@ -37,6 +37,10 @@
     <dd>{{ book.publication_date }}</dd>
     <dt>ISBN</dt>
     <dd>{{ book.isbn }}</dd>
+    {% for tag in book.tags.all %}
+    <dt>Tag</dt>
+    <dd>{{ tag }}</dd>
+    {% endfor %}
     <dt>UUID</dt>
     <dd>{{ book.uuid }}</dd>
   </dl>
