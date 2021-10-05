@@ -5,7 +5,7 @@ import isbnlib
 from django.core.paginator import Paginator
 from django.db.models import OuterRef, Subquery
 from django.http import HttpRequest, HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from isbnlib import classify, is_isbn10, is_isbn13
 from isbnlib.dev import ServiceIsDownError
@@ -89,11 +89,17 @@ def index(request: HttpRequest):
     })
 
 
-def show_book(request: HttpRequest, book_id):
-    book = Book.objects.get(pk=book_id)
-    return render(request, 'catalog/book.html', context={
-        'book': book
-    })
+def show_book(request: HttpRequest, book_id: int):
+    book = get_object_or_404(Book, pk=book_id)
+    if request.method == 'GET':
+        return render(request, 'catalog/book.html', context={
+            'book': book
+        })
+    elif request.method == 'POST':
+        if 'tag' in request.POST:
+            tag, _ = Tag.objects.get_or_create(value=request.POST['tag'].strip())
+            book.tags.add(tag)
+            return HttpResponseRedirect(reverse('show_book', args=[book_id]))
 
 
 def show_person(request: HttpRequest, person_id):

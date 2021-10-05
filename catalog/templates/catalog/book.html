@@ -46,6 +46,13 @@
   </dl>
 </div>
 
+<form method="post" action="">
+  {% csrf_token %}
+  <p>
+    <input name="tag"/> <button>Add Tag</button>
+  </p>
+</form>
+
 {% if book.classifiers %}
 <div class="book-classifiers">
   <h2>Classifiers</h2>
