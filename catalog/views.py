@@ -7,13 +7,14 @@ from django.db.models import OuterRef, Subquery
 from django.http import HttpRequest, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
-from isbnlib import is_isbn10, is_isbn13
+from isbnlib import classify, is_isbn10, is_isbn13
+from isbnlib.dev import ServiceIsDownError
 from nameparser import HumanName
 from nameparser.config import CONSTANTS
 from titlecase import titlecase
 
 from .forms import ImportForm, SingleISBNForm
-from .models import Book, Credit, Person
+from .models import Book, Credit, Person, Tag
 
 
 def getlines(text: str) -> list[str]:
@@ -161,14 +162,26 @@ def import_by_isbn(request: HttpRequest):
 
             author_names = [HumanName(author) for author in metadata.get('Authors', [])]
 
-            for author_name in author_names:
+            for i, author_name in enumerate(author_names, start=1):
                 author, _is_new = Person.objects.get_or_create(
                     name=author_name.original,
                     defaults={'sort_name': str(author_name)}
                 )
-                book.add_author(author)
+                book.add_author(author, order=i)
+
+            # add tags for classifiers
+            for tag_value in get_classifier_tags(isbn):
+                tag, _ = Tag.objects.get_or_create(value=tag_value)
+                book.tags.add(tag)
 
         return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
+
+
+def get_classifier_tags(isbn):
+    try:
+        return [f'{k.lower()}:{v}' for k, v in classify(isbn).items() if k.lower() != 'fast']
+    except ServiceIsDownError:
+        return []
 
 
 def set_isbn(request, book_id):

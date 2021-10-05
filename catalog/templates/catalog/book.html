@@ -37,7 +37,7 @@
     <dd>{{ book.publication_date }}</dd>
     <dt>ISBN</dt>
     <dd>{{ book.isbn }}</dd>
-    {% for tag in book.tags.all %}
+    {% for tag in book.sorted_tags %}
     <dt>Tag</dt>
     <dd>{{ tag }}</dd>
     {% endfor %}

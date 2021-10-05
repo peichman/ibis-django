@@ -1,8 +1,10 @@
+from typing import Optional
 from uuid import uuid4
 
 from django.db import models
 from django.db.models import QuerySet
 from isbnlib import classify
+from isbnlib.dev import ServiceIsDownError
 
 
 class Person(models.Model):
@@ -46,7 +48,7 @@ class Book(models.Model):
     def authors(self) -> QuerySet[Person]:
         return self.persons.filter(credit__role=Credit.Role.AUTHOR).order_by('credit__order')
 
-    def credits(self):
+    def credits(self) -> QuerySet['Credit']:
         return Credit.objects.filter(book=self.id).order_by('order')
 
     def __getattr__(self, item):
@@ -62,12 +64,18 @@ class Book(models.Model):
         return self.series.through.objects.filter(book=self)
 
     @property
-    def classifiers(self):
+    def classifiers(self) -> Optional[dict]:
         if not self.isbn:
             return {}
         if self._classifiers is None:
-            self._classifiers = classify(self.isbn)
+            try:
+                self._classifiers = classify(self.isbn)
+            except ServiceIsDownError:
+                return None
         return self._classifiers
+
+    def sorted_tags(self) -> QuerySet[Tag]:
+        return self.tags.order_by('value')
 
 
 class Series(models.Model):
