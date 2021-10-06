@@ -1,10 +1,7 @@
-from typing import Optional
 from uuid import uuid4
 
 from django.db import models
 from django.db.models import QuerySet
-from isbnlib import classify
-from isbnlib.dev import ServiceIsDownError
 
 
 class Person(models.Model):
