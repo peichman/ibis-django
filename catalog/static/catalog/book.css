@@ -24,3 +24,7 @@ dd>dl>dt {
     height: 0;
     margin: 0;
 }
+.value-tag~.label-tag {
+    visibility: hidden;
+    border-bottom: 1px solid #ccc;
+}

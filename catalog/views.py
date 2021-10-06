@@ -7,25 +7,13 @@ from django.db.models import OuterRef, Subquery
 from django.http import HttpRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
-from isbnlib import classify, is_isbn10, is_isbn13
-from isbnlib.dev import ServiceIsDownError
+from isbnlib import is_isbn10, is_isbn13
 from nameparser import HumanName
 from nameparser.config import CONSTANTS
-from titlecase import titlecase
 
 from .forms import ImportForm, SingleISBNForm
 from .models import Book, Credit, Person, Tag
-
-
-def getlines(text: str) -> list[str]:
-    return list(str(s) for s in filter(len, (map(str.strip, text.splitlines()))))
-
-
-def split_title(title: str, separator: str = ' - ') -> list[str, str]:
-    if separator in title:
-        return [titlecase(s) for s in title.split(separator, 1)]
-    else:
-        return [titlecase(title), '']
+from .utils import get_classifier_tags, getlines, split_title
 
 
 class Filters:
@@ -181,13 +169,6 @@ def import_by_isbn(request: HttpRequest):
                 book.tags.add(tag)
 
         return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
-
-
-def get_classifier_tags(isbn):
-    try:
-        return [f'{k.lower()}:{v}' for k, v in classify(isbn).items() if k.lower() != 'fast']
-    except ServiceIsDownError:
-        return []
 
 
 def set_isbn(request, book_id):

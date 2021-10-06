@@ -36,10 +36,6 @@ class Book(models.Model):
     tags = models.ManyToManyField(Tag, related_name='books')
     uuid = models.UUIDField('UUID', default=uuid4)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._classifiers = None
-
     def __str__(self):
         author_names = ', '.join(str(p) for p in self.authors)
         return f'{self.title}, by {author_names}'
@@ -62,17 +58,6 @@ class Book(models.Model):
 
     def series_memberships(self) -> list['SeriesMembership']:
         return self.series.through.objects.filter(book=self)
-
-    @property
-    def classifiers(self) -> Optional[dict]:
-        if not self.isbn:
-            return {}
-        if self._classifiers is None:
-            try:
-                self._classifiers = classify(self.isbn)
-            except ServiceIsDownError:
-                return None
-        return self._classifiers
 
     def sorted_tags(self) -> QuerySet[Tag]:
         return self.tags.order_by('value')

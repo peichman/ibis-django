@@ -30,28 +30,32 @@
 
     {% for serial in book.series_memberships %}
     <dt>Series</dt>
-    <dd>{{ serial.series.title }} (Book {{ serial.order }})</dd>
+    <dd><a href="{% url 'index' %}?series={{ serial.series.title }}">{{ serial.series.title }}</a> Book {{ serial.order }}</dd>
     {% endfor %}
 
     <dt>Published</dt>
     <dd>{{ book.publication_date }}</dd>
+    <dt>Publisher</dt>
+    <dd>{{ book.publisher }}</dd>
+
     <dt>ISBN</dt>
     <dd>{{ book.isbn }}</dd>
-    {% for tag in book.sorted_tags %}
-    <dt>Tag</dt>
-    <dd>{{ tag }}</dd>
-    {% endfor %}
     <dt>UUID</dt>
     <dd>{{ book.uuid }}</dd>
+
+    {% for tag in book.sorted_tags %}
+    <dt class="label-tag">Tag</dt>
+    <dd class="value-tag"><a href="{% url 'index' %}?tag={{ tag }}">{{ tag }}</a></dd>
+    {% endfor %}
+    <dt></dt>
+    <dd>
+      <form method="post" action="">
+        {% csrf_token %}
+        <input name="tag"/> <button>Add Tag</button>
+      </form>
+    </dd>
   </dl>
 </div>
-
-<form method="post" action="">
-  {% csrf_token %}
-  <p>
-    <input name="tag"/> <button>Add Tag</button>
-  </p>
-</form>
 
 {% if book.classifiers %}
 <div class="book-classifiers">
