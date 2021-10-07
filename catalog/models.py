@@ -34,12 +34,8 @@ class Book(models.Model):
     uuid = models.UUIDField('UUID', default=uuid4)
 
     def __str__(self):
-        author_names = ', '.join(str(p) for p in self.authors)
-        return f'{self.title}, by {author_names}'
-
-    @property
-    def authors(self) -> QuerySet[Person]:
-        return self.persons.filter(credit__role=Credit.Role.AUTHOR).order_by('credit__order')
+        names = ', '.join(str(credit.person) for credit in self.credits())
+        return f'{self.title}, by {names}'
 
     def credits(self) -> QuerySet['Credit']:
         return Credit.objects.filter(book=self.id).order_by('order')
