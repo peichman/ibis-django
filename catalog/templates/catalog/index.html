@@ -8,48 +8,64 @@
     <link rel="stylesheet" type="text/css" href="{% static 'catalog/index.css' %}"/>
 </head>
 <body>
-<table>
-    <thead>
-    <tr>
-        <th>Title</th>
-        <!-- th>Series</th -->
-        <th>Author</th>
-        <th>Published</th>
-        <th>Publisher</th>
-        <th>ISBN</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for book in page_obj %}
-    <tr>
-        <td>
-            <span class="book-title">
-                <a href="{% url 'show_book' book.id %}">{{ book.title }}</a>
-            </span>
-            {% if book.subtitle %}<span class="book-subtitle">{{ book.subtitle }}</span>{% endif %}
+<form method="post" action="{% url 'tag_books' %}">
+    {% csrf_token %}
+    {% redirect_tag %}
+    <table>
+        <thead>
+        <tr>
+            <th></th>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Published</th>
+            <th>Publisher</th>
+            <th>ISBN</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for book in page_obj %}
+        <tr>
+            <td>
+                <input type="checkbox" name="book_id" value="{{ book.id }}"/>
+            </td>
+            <td>
+                <span class="book-title">
+                    <a href="{% url 'show_book' book.id %}">{{ book.title }}</a>
+                </span>
+                {% if book.subtitle %}<span class="book-subtitle">{{ book.subtitle }}</span>{% endif %}
 
-            {% for serial in book.series_memberships %}
-            <span class="book-series"><a href="?series={{ serial.series.title|urlencode}}">{{serial.series.title}}</a> Book {{serial.order}}</span>
-            {% endfor %}
-        </td>
-        <td>
-            {% for author in book.author %}
-            <a href="?author={{ author.name|urlencode }}">{{ author.name }}</a>
-            {% endfor %}
-        </td>
-        <td>
-            {{ book.publication_date }}
-        </td>
-        <td>
-            {{ book.publisher }}
-        </td>
-        <td>
-            {{ book.isbn }}
-        </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
+                {% for serial in book.series_memberships %}
+                <span class="book-series"><a href="?series={{ serial.series.title|urlencode}}">{{serial.series.title}}</a> Book {{serial.order}}</span>
+                {% endfor %}
+
+                <div class="tags">
+                    {% for tag in book.plain_tags %}
+                    <a href="{% url 'index' %}?tag={{ tag }}">{{ tag }}</a>
+                    {% endfor %}
+                </div>
+            </td>
+            <td>
+                {% for author in book.author %}
+                <a href="?author={{ author.name|urlencode }}">{{ author.name }}</a>
+                {% endfor %}
+            </td>
+            <td>
+                {{ book.publication_date }}
+            </td>
+            <td>
+                {{ book.publisher }}
+            </td>
+            <td>
+                {{ book.isbn }}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <input type="text" name="tag"/>
+    <button>Add tag</button>
+</form>
+
 <div class="pagination">
     <span class="step-links">
         {% if page_obj.has_previous %}
@@ -68,11 +84,11 @@
     </span>
 </div>
 {% if filtered %}
-<div>
+<div class="filters">
     <a href="{% url 'index' %}">Clear Filters</a>
 </div>
 {% endif %}
-<div>
+<div class="controls">
     <a href="{% url 'import_books' %}">Import Book Titles</a> —
     <a href="{% url 'import_by_isbn' %}">Import by ISBNs</a> —
     <form class="add-by-isbn" method="post" action="{% url 'import_by_isbn' %}">

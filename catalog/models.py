@@ -55,6 +55,9 @@ class Book(models.Model):
     def sorted_tags(self) -> QuerySet[Tag]:
         return self.tags.order_by('value')
 
+    def plain_tags(self):
+        return self.tags.exclude(value__contains=':').order_by('value')
+
 
 class Series(models.Model):
     title = models.CharField(max_length=1024)

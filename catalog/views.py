@@ -52,7 +52,7 @@ def index(request: HttpRequest):
         'publication_date'
     )
 
-    paginator = Paginator(booklist, 20)
+    paginator = Paginator(booklist, 10)
     page_obj = paginator.get_page(request.GET.get('page', 1))
     filter_params = Filters(**filters)
 
@@ -169,6 +169,16 @@ def import_by_isbn(request: HttpRequest):
                 book.tags.add(tag)
 
         return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
+
+
+def tag_books(request: HttpRequest):
+    tag_value = request.POST['tag']
+    tag, _ = Tag.objects.get_or_create(value=tag_value)
+    book_ids = request.POST.getlist('book_id')
+    for book_id in book_ids:
+        book = Book.objects.get(pk=book_id)
+        book.tags.add(tag)
+    return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
 
 
 def set_isbn(request, book_id):
