@@ -19,7 +19,7 @@ a:hover {
 }
 
 /* modules */
-.filters, .controls {
+.pagination, .filters, .controls {
     margin: 1em 0;
 }
 
