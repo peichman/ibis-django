@@ -24,8 +24,8 @@ class TaggingInline(admin.StackedInline):
 
 
 class BookAdmin(admin.ModelAdmin):
-    fields = ['title', 'subtitle', 'isbn', 'publisher', 'publication_date']
-    inlines = [TaggingInline, CreditInline]
+    fields = ['title', 'subtitle', 'isbn', 'format', 'publisher', 'publication_date']
+    inlines = [CreditInline, TaggingInline]
     search_fields = ['title']
 
 
