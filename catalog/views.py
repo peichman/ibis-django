@@ -16,34 +16,56 @@ from .models import Book, Credit, Person, Tag
 from .utils import get_classifier_tags, getlines, split_title
 
 
-class Filters:
-    def __init__(self, page=None, **filters):
-        self.filters = filters
-        self.page = page
+class FilterSet:
+    def __init__(self):
+        self.filters = []
+
+    def __len__(self):
+        return len(self.filters)
+
+    def __bool__(self):
+        return len(self) > 0
+
+    def __iter__(self):
+        for k, v in self.filters:
+            yield k, v
+
+    def __repr__(self):
+        rep = '<' + self.__class__.__name__
+        for name, value in self:
+            rep += f' {name}={value}'
+        rep += '>'
+        return rep
+
+    def __str__(self):
+        return urlencode(self.filters) if self.filters else ''
+
+    def add(self, name, value):
+        self.filters.append((name, value))
 
     def at_page(self, page=None):
         if page is None:
             return self.filters
         else:
-            return {**self.filters, 'page': page}
+            return self.filters + [('page', page)]
 
 
 def index(request: HttpRequest):
     booklist = Book.objects.all()
-    filters = {}
+    filters = FilterSet()
 
     for role in Credit.Role.values:
         if role in request.GET:
             booklist = booklist.filter(credit__role=role, persons__name__in=[request.GET[role]])
-            filters[role] = request.GET[role]
+            filters.add(role, request.GET[role])
 
     if 'series' in request.GET:
         booklist = booklist.filter(series__title__in=[request.GET['series']])
-        filters['series'] = request.GET['series']
+        filters.add('series', request.GET['series'])
 
     if 'tag' in request.GET:
         booklist = booklist.filter(tags__value__contains=request.GET['tag'])
-        filters['tag'] = request.GET['tag']
+        filters.add('tag', request.GET['tag'])
 
     first_author = Credit.objects.filter(book=OuterRef('pk'), order=1)[:1]
 
@@ -54,24 +76,23 @@ def index(request: HttpRequest):
 
     paginator = Paginator(booklist, 10)
     page_obj = paginator.get_page(request.GET.get('page', 1))
-    filter_params = Filters(**filters)
 
     page_link = {}
     if page_obj.has_previous():
         page_link.update({
-            'first': urlencode(filter_params.at_page(1)),
-            'previous': urlencode(filter_params.at_page(page_obj.previous_page_number()))
+            'first': urlencode(filters.at_page(1)),
+            'previous': urlencode(filters.at_page(page_obj.previous_page_number()))
         })
 
     if page_obj.has_next():
         page_link.update({
-            'next': urlencode(filter_params.at_page(page_obj.next_page_number())),
-            'last': urlencode(filter_params.at_page(paginator.num_pages))
+            'next': urlencode(filters.at_page(page_obj.next_page_number())),
+            'last': urlencode(filters.at_page(paginator.num_pages))
         })
 
     return render(request, 'catalog/index.html', context={
         'page_obj': page_obj,
-        'filtered': len(filters) > 0,
+        'filters': filters,
         'page_link': page_link,
         'isbn_form': SingleISBNForm()
     })
