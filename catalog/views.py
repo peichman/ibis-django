@@ -2,6 +2,7 @@ import re
 from urllib.parse import urlencode
 
 import isbnlib
+import requests
 from django.core.paginator import Paginator
 from django.db.models import OuterRef, Subquery
 from django.http import HttpRequest, HttpResponseRedirect
@@ -48,6 +49,11 @@ class FilterSet:
             return self.filters
         else:
             return self.filters + [('page', page)]
+
+
+def get_format(isbn):
+    r = requests.get(f'https://openlibrary.org/isbn/{isbn}.json')
+    return r.json().get('physical_format', '?').lower() if r.ok else '?'
 
 
 def index(request: HttpRequest):
@@ -173,6 +179,7 @@ def import_by_isbn(request: HttpRequest):
             book.title, book.subtitle = split_title(metadata.get('Title', isbn))
             book.publisher = metadata.get('Publisher') or '?'
             book.publication_date = metadata.get('Year') or '?'
+            book.format = get_format(isbn)
             book.save()
 
             author_names = [HumanName(author) for author in metadata.get('Authors', [])]
