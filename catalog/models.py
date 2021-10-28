@@ -29,6 +29,8 @@ class Book(models.Model):
         PAPERBACK = 'paperback'
         MASS_MARKET = 'mass-market paperback'
         EBOOK = 'ebook'
+        MAP = 'map'
+        CHAPBOOK = 'chapbook'
 
     title = models.CharField(max_length=1024)
     subtitle = models.CharField(max_length=1024, blank=True)
