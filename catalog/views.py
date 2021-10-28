@@ -3,6 +3,7 @@ from urllib.parse import urlencode
 
 import isbnlib
 import requests
+from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
 from django.db.models import OuterRef, Subquery
 from django.http import HttpRequest, HttpResponseRedirect
@@ -12,7 +13,7 @@ from isbnlib import is_isbn10, is_isbn13
 from nameparser import HumanName
 from nameparser.config import CONSTANTS
 
-from .forms import ImportForm, SingleISBNForm
+from .forms import ImportForm, SingleISBNForm, BulkEditBooksForm
 from .models import Book, Credit, Person, Tag
 from .utils import get_classifier_tags, getlines, split_title
 
@@ -199,14 +200,42 @@ def import_by_isbn(request: HttpRequest):
         return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
 
 
-def tag_books(request: HttpRequest):
-    tag_value = request.POST['tag']
-    tag, _ = Tag.objects.get_or_create(value=tag_value)
-    book_ids = request.POST.getlist('book_id')
-    for book_id in book_ids:
-        book = Book.objects.get(pk=book_id)
-        book.tags.add(tag)
-    return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
+def books(request: HttpRequest):
+    if request.method == 'POST':
+        action = request.POST['action']
+        book_ids = request.POST.getlist('book_id')
+        if action == 'tag':
+            # bulk tagging
+            tag_value = request.POST['tag']
+            tag, _ = Tag.objects.get_or_create(value=tag_value)
+            for book_id in book_ids:
+                book = Book.objects.get(pk=book_id)
+                book.tags.add(tag)
+            return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
+        elif action == 'edit':
+            # bulk editing
+            qs = [('book_id', book_id) for book_id in book_ids] + [('redirect', request.POST.get('redirect', reverse('index')))]
+            return HttpResponseRedirect(reverse('bulk_edit_books') + '?' + urlencode(qs))
+        else:
+            raise BadRequest
+
+
+def bulk_edit_books(request: HttpRequest):
+    if request.method == 'GET':
+        context = {
+            'form': BulkEditBooksForm(),
+            'books': [Book.objects.get(pk=book_id) for book_id in request.GET.getlist('book_id')],
+            'redirect': request.GET['redirect']
+        }
+        return render(request, 'catalog/bulk_edit_books.html', context=context)
+    elif request.method == 'POST':
+        book_ids = request.POST.getlist('book_id')
+        new_format = request.POST['format']
+        for book_id in book_ids:
+            book = Book.objects.get(pk=book_id)
+            book.format = new_format
+            book.save()
+        return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
 
 
 def set_isbn(request, book_id):

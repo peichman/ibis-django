@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Person
+from .models import Person, Book
 
 
 class ImportForm(forms.Form):
@@ -10,3 +10,7 @@ class ImportForm(forms.Form):
 
 class SingleISBNForm(forms.Form):
     isbn = forms.CharField(max_length=13, label='')
+
+
+class BulkEditBooksForm(forms.Form):
+    format = forms.ChoiceField(choices=Book.Format.choices)

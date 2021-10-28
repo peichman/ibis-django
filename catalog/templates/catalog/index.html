@@ -11,7 +11,7 @@
 
     {% include './pagination.html' %}
 
-    <form method="post" action="{% url 'tag_books' %}">
+    <form method="post" action="{% url 'books' %}">
         {% csrf_token %}
         {% redirect_tag %}
         <table>
@@ -70,7 +70,8 @@
             </tbody>
         </table>
         <input type="text" name="tag"/>
-        <button>Add tag</button>
+        <button name="action" value="tag">Add tag</button>
+        <button name="action" value="edit">Edit selected books</button>
     </form>
 
     {% include './pagination.html' %}

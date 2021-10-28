@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+{% load static %}
+{% load redirect_tag %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bulk Edit</title>
+</head>
+<body>
+<form method="post" action="{% url 'bulk_edit_books' %}">
+    {% csrf_token %}
+    <input type="hidden" name="redirect" value="{{ redirect }}"/>
+    <ul>
+        {% for book in books %}
+        <li><input type="hidden" name="book_id" value="{{ book.id }}"/>{{ book }}</li>
+        {% endfor %}
+    </ul>
+    {{ form }}
+    <button>Save</button>
+</form>
+</body>
+</html>
