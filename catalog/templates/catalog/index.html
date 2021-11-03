@@ -49,9 +49,20 @@
                         </div>
                     </td>
                     <td>
-                        {% for author in book.author %}
-                        <a href="?author={{ author.name|urlencode }}">{{ author.name }}</a>
-                        {% endfor %}
+                        <ul class="book-credits">
+                            {% for person in book.author %}
+                            <li class="credit"><a href="?author={{ person.name|urlencode }}">{{ person.name }}</a></li>
+                            {% endfor %}
+                            {% for person in book.editor %}
+                            <li class="credit"><a href="?editor={{ person.name|urlencode }}">{{ person.name }}</a> (Ed.)</li>
+                            {% endfor %}
+                            {% for person in book.illustrator %}
+                            <li class="credit"><a href="?illustrator={{ person.name|urlencode }}">{{ person.name }}</a> (Illus.)</li>
+                            {% endfor %}
+                            {% for person in book.translator %}
+                            <li class="credit"><a href="?translator={{ person.name|urlencode }}">{{ person.name }}</a> (Trans.)</li>
+                            {% endfor %}
+                        </ul>
                     </td>
                     <td>
                         {{ book.publication_date }}
