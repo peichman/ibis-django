@@ -8,6 +8,12 @@
     <link rel="stylesheet" type="text/css" href="{% static 'catalog/index.css' %}"/>
 </head>
 <body>
+    <div class="controls">
+        <form method="get" action="{% url 'find_book' %}">
+            <input type="text" name="isbn"/>
+            <button>Find by ISBN</button>
+        </form>
+    </div>
 
     {% include './pagination.html' %}
 
@@ -80,9 +86,11 @@
                 {% endfor %}
             </tbody>
         </table>
-        <input type="text" name="tag"/>
-        <button name="action" value="tag">Add tag</button>
-        <button name="action" value="edit">Edit selected books</button>
+        <div class="controls">
+            <input type="text" name="tag"/>
+            <button name="action" value="tag">Add tag</button>
+            <button name="action" value="edit">Edit selected books</button>
+        </div>
     </form>
 
     {% include './pagination.html' %}

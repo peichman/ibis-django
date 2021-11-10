@@ -244,3 +244,12 @@ def set_isbn(request, book_id):
     book.isbn = isbn
     book.save()
     return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
+
+
+def find_book(request: HttpRequest):
+    isbn = request.GET.get('isbn', None) or None
+    if isbn is not None:
+        book = get_object_or_404(Book, isbn=isbn)
+        return HttpResponseRedirect(reverse('show_book', kwargs={'book_id': book.id}))
+    else:
+        return HttpResponseRedirect(reverse('index'))
