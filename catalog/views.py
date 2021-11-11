@@ -87,14 +87,14 @@ def index(request: HttpRequest):
     page_link = {}
     if page_obj.has_previous():
         page_link.update({
-            'first': urlencode(filters.at_page(1)),
-            'previous': urlencode(filters.at_page(page_obj.previous_page_number()))
+            'first': urlencode(filters.at_page(1), safe=':/'),
+            'previous': urlencode(filters.at_page(page_obj.previous_page_number()), safe=':/')
         })
 
     if page_obj.has_next():
         page_link.update({
-            'next': urlencode(filters.at_page(page_obj.next_page_number())),
-            'last': urlencode(filters.at_page(paginator.num_pages))
+            'next': urlencode(filters.at_page(page_obj.next_page_number()), safe=':/'),
+            'last': urlencode(filters.at_page(paginator.num_pages), safe=':/')
         })
 
     return render(request, 'catalog/index.html', context={
