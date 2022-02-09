@@ -12,6 +12,7 @@ from django.urls import reverse
 from isbnlib import is_isbn10, is_isbn13
 from nameparser import HumanName
 from nameparser.config import CONSTANTS
+from urlobject import URLObject
 
 from .forms import ImportForm, SingleISBNForm, BulkEditBooksForm
 from .models import Book, Credit, Person, Tag
@@ -45,12 +46,6 @@ class FilterSet:
     def add(self, name, value):
         self.filters.append((name, value))
 
-    def at_page(self, page=None):
-        if page is None:
-            return self.filters
-        else:
-            return self.filters + [('page', page)]
-
 
 def get_format(isbn):
     r = requests.get(f'https://openlibrary.org/isbn/{isbn}.json')
@@ -61,18 +56,18 @@ def index(request: HttpRequest):
     booklist = Book.objects.all()
     filters = FilterSet()
 
-    for role in Credit.Role.values:
-        if role in request.GET:
-            booklist = booklist.filter(credit__role=role, persons__name__in=[request.GET[role]])
-            filters.add(role, request.GET[role])
+    filter_templates = {
+        'series': lambda name, value: {'series__title': value},
+        'tag': lambda name, value: {'tags__value': value},
+        **{role: lambda name, value: {'credit__role': name, 'persons__name': value} for role in Credit.Role.values}
+    }
 
-    if 'series' in request.GET:
-        booklist = booklist.filter(series__title__in=[request.GET['series']])
-        filters.add('series', request.GET['series'])
-
-    if 'tag' in request.GET:
-        booklist = booklist.filter(tags__value__contains=request.GET['tag'])
-        filters.add('tag', request.GET['tag'])
+    for param_name in request.GET.keys():
+        if param_name in filter_templates:
+            for param_value in request.GET.getlist(param_name):
+                filter_params = filter_templates[param_name](param_name, param_value)
+                booklist = booklist.filter(**filter_params)
+                filters.add(param_name, param_value)
 
     first_author = Credit.objects.filter(book=OuterRef('pk'), order=1)[:1]
 
@@ -84,23 +79,33 @@ def index(request: HttpRequest):
     paginator = Paginator(booklist, 10)
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
-    page_link = {}
+    url = URLObject(request.build_absolute_uri())
+
+    page_links = {
+        'first': url.set_query_param('page', 1),
+        'last': url.set_query_param('page', paginator.num_pages)
+    }
+
     if page_obj.has_previous():
-        page_link.update({
-            'first': urlencode(filters.at_page(1), safe=':/'),
-            'previous': urlencode(filters.at_page(page_obj.previous_page_number()), safe=':/')
-        })
+        page_links.update(previous=url.set_query_param('page', page_obj.previous_page_number()))
 
     if page_obj.has_next():
-        page_link.update({
-            'next': urlencode(filters.at_page(page_obj.next_page_number()), safe=':/'),
-            'last': urlencode(filters.at_page(paginator.num_pages), safe=':/')
-        })
+        page_links.update(next=url.set_query_param('page', page_obj.next_page_number()))
+
+    filter_removal_links = [
+        {
+            'label': f'{name}: {value}',
+            'href': url.del_query_param_value(name, value)
+        }
+        for name, value in filters
+    ]
 
     return render(request, 'catalog/index.html', context={
+        'url': url,
         'page_obj': page_obj,
         'filters': filters,
-        'page_link': page_link,
+        'filter_removal_links': filter_removal_links,
+        'page_links': page_links,
         'isbn_form': SingleISBNForm()
     })
 

@@ -11,5 +11,6 @@ requests==2.26.0
 sqlparse==0.4.2
 titlecase==2.3
 urllib3==1.26.7
+URLObject==2.4.3
 waitress==2.0.0
 whitenoise==5.3.0

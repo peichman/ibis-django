@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 {% load static %}
 {% load redirect_tag %}
+{% load url_query %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -16,6 +17,18 @@
     </div>
 
     {% include './pagination.html' %}
+
+    {% if filters %}
+    <ul class="filters">
+        {% for filter in filter_removal_links %}
+        <li class="filter">
+            <span class="filter-label">{{ filter.label }}</span>
+            <a href="{{ filter.href }}" title="Remove {{ filter.label }}">×</a>
+        </li>
+        {% endfor %}
+        <li class="clear-filter"><a href="{% url 'index' %}">Clear All Filters</a></li>
+    </ul>
+    {% endif %}
 
     <form method="post" action="{% url 'books' %}">
         {% csrf_token %}
@@ -45,28 +58,28 @@
                         {% if book.subtitle %}<span class="book-subtitle">{{ book.subtitle }}</span>{% endif %}
 
                         {% for serial in book.series_memberships %}
-                        <span class="book-series"><a href="?series={{ serial.series.title|urlencode}}">{{serial.series.title}}</a> Book {{serial.order}}</span>
+                        <span class="book-series"><a href="{% add_filter 'series' serial.series.title %}">{{serial.series.title}}</a> Book {{serial.order}}</span>
                         {% endfor %}
 
                         <div class="tags">
                             {% for tag in book.plain_tags %}
-                            <a href="{% url 'index' %}?tag={{ tag }}">{{ tag }}</a>
+                            <a href="{% add_filter 'tag' tag %}">{{ tag }}</a>
                             {% endfor %}
                         </div>
                     </td>
                     <td>
                         <ul class="book-credits">
                             {% for person in book.author %}
-                            <li class="credit"><a href="?author={{ person.name|urlencode }}">{{ person.name }}</a></li>
+                            <li class="credit"><a href="{% add_filter 'author' person.name %}">{{ person.name }}</a></li>
                             {% endfor %}
                             {% for person in book.editor %}
-                            <li class="credit"><a href="?editor={{ person.name|urlencode }}">{{ person.name }}</a> (Ed.)</li>
+                            <li class="credit"><a href="{% add_filter 'editor' person.name %}">{{ person.name }}</a> (Ed.)</li>
                             {% endfor %}
                             {% for person in book.illustrator %}
-                            <li class="credit"><a href="?illustrator={{ person.name|urlencode }}">{{ person.name }}</a> (Illus.)</li>
+                            <li class="credit"><a href="{% add_filter 'illustrator' person.name %}">{{ person.name }}</a> (Illus.)</li>
                             {% endfor %}
                             {% for person in book.translator %}
-                            <li class="credit"><a href="?translator={{ person.name|urlencode }}">{{ person.name }}</a> (Trans.)</li>
+                            <li class="credit"><a href="{% add_filter 'translator' person.name %}">{{ person.name }}</a> (Trans.)</li>
                             {% endfor %}
                         </ul>
                     </td>
@@ -95,11 +108,6 @@
 
     {% include './pagination.html' %}
 
-    {% if filters %}
-    <div class="filters">
-        <a href="{% url 'index' %}">Clear Filters</a>
-    </div>
-    {% endif %}
     <div class="controls">
         <a href="{% url 'import_books' %}">Import Book Titles</a> —
         <a href="{% url 'import_by_isbn' %}">Import by ISBNs</a> —
