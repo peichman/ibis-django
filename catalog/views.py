@@ -5,7 +5,7 @@ import isbnlib
 import requests
 from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
-from django.db.models import OuterRef, Subquery
+from django.db.models import OuterRef, Subquery, Q
 from django.http import HttpRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -30,8 +30,7 @@ class FilterSet:
         return len(self) > 0
 
     def __iter__(self):
-        for k, v in self.filters:
-            yield k, v
+        yield from self.filters
 
     def __repr__(self):
         rep = '<' + self.__class__.__name__
@@ -43,8 +42,10 @@ class FilterSet:
     def __str__(self):
         return urlencode(self.filters) if self.filters else ''
 
-    def add(self, name, value):
-        self.filters.append((name, value))
+    def add(self, name, value, label=None):
+        if label is None:
+            label = f'{name}: {value}'
+        self.filters.append((name, value, label))
 
 
 def get_format(isbn):
@@ -52,22 +53,43 @@ def get_format(isbn):
     return r.json().get('physical_format', '?').lower() if r.ok else '?'
 
 
+CATEGORIES = {
+    'fiction': Q(tags__value__in=['novel', 'short stories']),
+    'non-fiction': ~Q(tags__value__in=['novel', 'short stories', 'poetry', 'comics', 'play']),
+    'translated': Q(credit__role=Credit.Role.TRANSLATOR),
+}
+
+FILTER_TEMPLATES = {
+    'category': lambda name, value: CATEGORIES.get(value, None),
+    'series': lambda name, value: Q(series__title=value),
+    'series~': lambda name, value: Q(series__title__icontains=value),
+    'tag': lambda name, value: Q(tags__value=value),
+    'format': lambda name, value: Q(format=value),
+    'publisher': lambda name, value: Q(publisher=value),
+    'publisher~': lambda name, value: Q(publisher__icontains=value),
+    'year': lambda name, value: Q(publication_date=value),
+    'title~': lambda name, value: Q(title__icontains=value),
+    **{role: lambda name, value: Q(credit__role=name, persons__name=value) for role in Credit.Role.values},
+    **{f'{role}~': lambda name, value: Q(credit__role=name.rstrip('~'), persons__name__icontains=value) for role in
+       Credit.Role.values},
+}
+
+
 def index(request: HttpRequest):
     booklist = Book.objects.all()
     filters = FilterSet()
 
-    filter_templates = {
-        'series': lambda name, value: {'series__title': value},
-        'tag': lambda name, value: {'tags__value': value},
-        **{role: lambda name, value: {'credit__role': name, 'persons__name': value} for role in Credit.Role.values}
-    }
-
     for param_name in request.GET.keys():
-        if param_name in filter_templates:
+        if param_name in FILTER_TEMPLATES:
             for param_value in request.GET.getlist(param_name):
-                filter_params = filter_templates[param_name](param_name, param_value)
-                booklist = booklist.filter(**filter_params)
-                filters.add(param_name, param_value)
+                filter_query = FILTER_TEMPLATES[param_name](param_name, param_value)
+                if filter_query is not None:
+                    booklist = booklist.filter(filter_query)
+                    if param_name.endswith('~'):
+                        filter_label = f'{param_name.rstrip("~")} matches "{param_value}"'
+                    else:
+                        filter_label = f'{param_name}: {param_value}'
+                    filters.add(param_name, param_value, filter_label)
 
     first_author = Credit.objects.filter(book=OuterRef('pk'), order=1)[:1]
 
@@ -94,14 +116,15 @@ def index(request: HttpRequest):
 
     filter_removal_links = [
         {
-            'label': f'{name}: {value}',
-            'href': url.del_query_param_value(name, value)
+            'label': label,
+            'href': url.del_query_param_value(name, value).del_query_param('page')
         }
-        for name, value in filters
+        for name, value, label in filters
     ]
 
     return render(request, 'catalog/index.html', context={
         'url': url,
+        'categories': CATEGORIES.keys(),
         'page_obj': page_obj,
         'filters': filters,
         'filter_removal_links': filter_removal_links,

@@ -16,6 +16,14 @@
         </form>
     </div>
 
+    <ul>
+        {% for category in categories %}
+        <li>
+            <a href="{% add_filter 'category' category %}">{{ category }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+
     {% include './pagination.html' %}
 
     {% if filters %}
@@ -84,13 +92,13 @@
                         </ul>
                     </td>
                     <td>
-                        {{ book.publication_date }}
+                        <a href="{% add_filter 'year' book.publication_date %}">{{ book.publication_date }}</a>
                     </td>
                     <td>
-                        {{ book.publisher }}
+                        <a href="{% add_filter 'publisher' book.publisher %}">{{ book.publisher }}</a>
                     </td>
                     <td>
-                        {{ book.format.capitalize }}
+                        <a href="{% add_filter 'format' book.format %}">{{ book.format.capitalize }}</a>
                     </td>
                     <td>
                         {{ book.isbn }}
