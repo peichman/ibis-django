@@ -40,7 +40,7 @@ class FilterSet:
         return rep
 
     def __str__(self):
-        return urlencode(self.filters) if self.filters else ''
+        return urlencode([f[:2] for f in self.filters]) if self.filters else ''
 
     def add(self, name, value, label=None):
         if label is None:
