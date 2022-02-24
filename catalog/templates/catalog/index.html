@@ -16,15 +16,18 @@
         </form>
     </div>
 
-    <ul>
-        {% for category in categories %}
-        <li>
-            <a href="{% add_filter 'category' category %}">{{ category }}</a>
-        </li>
-        {% endfor %}
-    </ul>
-
     {% include './pagination.html' %}
+
+    <form method="post" action="">
+        {% csrf_token %}
+        <select name="filter_name">
+            {% for filter_name in filter_names %}
+            <option>{{ filter_name }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="filter_value"/>
+        <button>Add filter</button>
+    </form>
 
     {% if filters %}
     <ul class="filters">

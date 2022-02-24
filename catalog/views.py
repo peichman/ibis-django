@@ -75,7 +75,18 @@ FILTER_TEMPLATES = {
 }
 
 
+def append_filter(request: HttpRequest):
+    url = URLObject(request.build_absolute_uri())
+    filter_name = request.POST['filter_name']
+    filter_value = request.POST['filter_value']
+    new_url = url.add_query_param(filter_name, filter_value)
+    return HttpResponseRedirect(new_url)
+
+
 def index(request: HttpRequest):
+    if request.method == 'POST':
+        return append_filter(request)
+
     booklist = Book.objects.all()
     filters = FilterSet()
 
@@ -125,6 +136,7 @@ def index(request: HttpRequest):
     return render(request, 'catalog/index.html', context={
         'url': url,
         'categories': CATEGORIES.keys(),
+        'filter_names': FILTER_TEMPLATES.keys(),
         'page_obj': page_obj,
         'filters': filters,
         'filter_removal_links': filter_removal_links,
