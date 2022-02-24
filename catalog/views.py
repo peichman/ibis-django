@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 import isbnlib
 import requests
 from django.core.exceptions import BadRequest
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, Page
 from django.db.models import OuterRef, Subquery, Q
 from django.http import HttpRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -48,6 +48,43 @@ class FilterSet:
         self.filters.append((name, value, label))
 
 
+class PaginationLinks:
+    def __init__(self, url: URLObject, page: Page, param_name='page'):
+        self.url = url
+        self.page = page
+        self.param_name = param_name
+
+    @property
+    def page_number(self):
+        return self.page.number
+
+    @property
+    def num_pages(self):
+        return self.page.paginator.num_pages
+
+    @property
+    def first(self):
+        return self.url.set_query_param(self.param_name, 1)
+
+    @property
+    def last(self):
+        return self.url.set_query_param(self.param_name, self.num_pages)
+
+    @property
+    def previous(self):
+        if self.page.has_previous():
+            return self.url.set_query_param(self.param_name, self.page.previous_page_number())
+        else:
+            return None
+
+    @property
+    def next(self):
+        if self.page.has_next():
+            return self.url.set_query_param(self.param_name, self.page.next_page_number())
+        else:
+            return None
+
+
 def get_format(isbn):
     r = requests.get(f'https://openlibrary.org/isbn/{isbn}.json')
     return r.json().get('physical_format', '?').lower() if r.ok else '?'
@@ -73,6 +110,8 @@ FILTER_TEMPLATES = {
     **{f'{role}~': lambda name, value: Q(credit__role=name.rstrip('~'), persons__name__icontains=value) for role in
        Credit.Role.values},
 }
+
+PAGE_PARAM_NAME = 'page'
 
 
 def append_filter(request: HttpRequest):
@@ -110,25 +149,14 @@ def index(request: HttpRequest):
     )
 
     paginator = Paginator(booklist, 10)
-    page_obj = paginator.get_page(request.GET.get('page', 1))
+    page = paginator.get_page(request.GET.get(PAGE_PARAM_NAME, 1))
 
     url = URLObject(request.build_absolute_uri())
-
-    page_links = {
-        'first': url.set_query_param('page', 1),
-        'last': url.set_query_param('page', paginator.num_pages)
-    }
-
-    if page_obj.has_previous():
-        page_links.update(previous=url.set_query_param('page', page_obj.previous_page_number()))
-
-    if page_obj.has_next():
-        page_links.update(next=url.set_query_param('page', page_obj.next_page_number()))
 
     filter_removal_links = [
         {
             'label': label,
-            'href': url.del_query_param_value(name, value).del_query_param('page')
+            'href': url.del_query_param_value(name, value).del_query_param(PAGE_PARAM_NAME)
         }
         for name, value, label in filters
     ]
@@ -137,10 +165,10 @@ def index(request: HttpRequest):
         'url': url,
         'categories': CATEGORIES.keys(),
         'filter_names': FILTER_TEMPLATES.keys(),
-        'page_obj': page_obj,
+        'page_obj': page,
         'filters': filters,
         'filter_removal_links': filter_removal_links,
-        'page_links': page_links,
+        'page_links': PaginationLinks(url, page, PAGE_PARAM_NAME),
         'isbn_form': SingleISBNForm()
     })
 
@@ -202,7 +230,7 @@ def import_by_isbn(request: HttpRequest):
         CONSTANTS.string_format = sort_name_format
 
         for isbn in isbns:
-            if not(is_isbn10(isbn) or is_isbn13(isbn)):
+            if not (is_isbn10(isbn) or is_isbn13(isbn)):
                 # skip this, not an ISBN
                 # TODO: log this
                 continue
@@ -254,7 +282,8 @@ def books(request: HttpRequest):
             return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
         elif action == 'edit':
             # bulk editing
-            qs = [('book_id', book_id) for book_id in book_ids] + [('redirect', request.POST.get('redirect', reverse('index')))]
+            qs = [('book_id', book_id) for book_id in book_ids] + [
+                ('redirect', request.POST.get('redirect', reverse('index')))]
             return HttpResponseRedirect(reverse('bulk_edit_books') + '?' + urlencode(qs))
         else:
             raise BadRequest
