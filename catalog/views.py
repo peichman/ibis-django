@@ -6,7 +6,7 @@ import requests
 from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator, Page
 from django.db.models import OuterRef, Subquery, Q
-from django.http import HttpRequest, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from isbnlib import is_isbn10, is_isbn13
@@ -96,33 +96,61 @@ CATEGORIES = {
     'translated': Q(credit__role=Credit.Role.TRANSLATOR),
 }
 
+
+PREDICATES = {
+    '': 'iexact',
+    '~': 'icontains',
+    '^': 'istartswith',
+    '$': 'iendswith'
+}
+
+
+def create_filter(value_arg):
+    def fn(_name, value):
+        return Q(**{value_arg: value})
+    return fn
+
+
+def filter_group(param_name, query_field=None):
+    if query_field is None:
+        query_field = param_name
+    return {
+        param_name + suffix: create_filter('__'.join((query_field, predicate)))
+        for suffix, predicate in PREDICATES.items()
+    }
+
+
 FILTER_TEMPLATES = {
     'category': lambda name, value: CATEGORIES.get(value, None),
-    'series': lambda name, value: Q(series__title=value),
-    'series~': lambda name, value: Q(series__title__icontains=value),
     'tag': lambda name, value: Q(tags__value=value),
     'format': lambda name, value: Q(format=value),
     'publisher': lambda name, value: Q(publisher=value),
     'publisher~': lambda name, value: Q(publisher__icontains=value),
     'year': lambda name, value: Q(publication_date=value),
-    'title~': lambda name, value: Q(title__icontains=value),
+    **filter_group('series', 'series__title'),
+    **filter_group('title'),
     **{role: lambda name, value: Q(credit__role=name, persons__name=value) for role in Credit.Role.values},
     **{f'{role}~': lambda name, value: Q(credit__role=name.rstrip('~'), persons__name__icontains=value) for role in
        Credit.Role.values},
 }
 
+FILTER_LABELS = {
+    'Title': 'title',
+    'Series': 'series'
+}
+
 PAGE_PARAM_NAME = 'page'
 
 
-def append_filter(request: HttpRequest):
+def append_filter(request: HttpRequest) -> HttpResponseRedirect:
     url = URLObject(request.build_absolute_uri())
-    filter_name = request.POST['filter_name']
+    filter_param = request.POST['filter_name'] + request.POST['filter_operation']
     filter_value = request.POST['filter_value']
-    new_url = url.add_query_param(filter_name, filter_value)
+    new_url = url.add_query_param(filter_param, filter_value)
     return HttpResponseRedirect(new_url)
 
 
-def index(request: HttpRequest):
+def index(request: HttpRequest) -> HttpResponse:
     if request.method == 'POST':
         return append_filter(request)
 
@@ -137,6 +165,10 @@ def index(request: HttpRequest):
                     booklist = booklist.filter(filter_query)
                     if param_name.endswith('~'):
                         filter_label = f'{param_name.rstrip("~")} matches "{param_value}"'
+                    elif param_name.endswith('^'):
+                        filter_label = f'{param_name.rstrip("^")} begins with "{param_value}"'
+                    elif param_name.endswith('$'):
+                        filter_label = f'{param_name.rstrip("$")} ends with "{param_value}"'
                     else:
                         filter_label = f'{param_name}: {param_value}'
                     filters.add(param_name, param_value, filter_label)
@@ -164,7 +196,7 @@ def index(request: HttpRequest):
     return render(request, 'catalog/index.html', context={
         'url': url,
         'categories': CATEGORIES.keys(),
-        'filter_names': FILTER_TEMPLATES.keys(),
+        'filter_names': FILTER_LABELS,
         'page_obj': page,
         'filters': filters,
         'filter_removal_links': filter_removal_links,

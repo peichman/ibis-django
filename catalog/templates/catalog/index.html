@@ -21,9 +21,15 @@
     <form method="post" action="">
         {% csrf_token %}
         <select name="filter_name">
-            {% for filter_name in filter_names %}
-            <option>{{ filter_name }}</option>
+            {% for filter_label, filter_name in filter_names.items %}
+            <option value="{{ filter_name }}">{{ filter_label }}</option>
             {% endfor %}
+        </select>
+        <select name="filter_operation">
+            <option>is</option>
+            <option value="~">matches</option>
+            <option value="^">begins with</option>
+            <option value="$">ends with</option>
         </select>
         <input type="text" name="filter_value"/>
         <button>Add filter</button>
