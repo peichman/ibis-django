@@ -43,7 +43,7 @@ class Book(models.Model):
     uuid = models.UUIDField('UUID', default=uuid4)
 
     def __str__(self):
-        names = ', '.join(str(credit.person) for credit in self.credits())
+        names = ', '.join(str(credit.person_with_role) for credit in self.credits())
         return f'{self.title}, by {names}'
 
     def credits(self) -> QuerySet['Credit']:
@@ -93,6 +93,13 @@ class Credit(models.Model):
 
     def __str__(self):
         return f'{self.person.name}, {self.role} of {self.book.title}'
+
+    @property
+    def person_with_role(self):
+        output = str(self.person.name)
+        if self.role != Credit.Role.AUTHOR:
+            output += f' ({self.role})'
+        return output
 
 
 class SeriesMembership(models.Model):
