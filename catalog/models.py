@@ -85,6 +85,7 @@ class Credit(models.Model):
         EDITOR = 'editor'
         TRANSLATOR = 'translator'
         ILLUSTRATOR = 'illustrator'
+        ANNOTATOR = 'annotator'
 
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)

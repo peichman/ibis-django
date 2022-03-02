@@ -82,6 +82,9 @@
                             {% for person in book.editor %}
                             <li class="credit"><a href="{% add_filter 'editor' person.name %}">{{ person.name }}</a> (Ed.)</li>
                             {% endfor %}
+                            {% for person in book.annotator %}
+                            <li class="credit"><a href="{% add_filter 'annotator' person.name %}">{{ person.name }}</a> (Annot.)</li>
+                            {% endfor %}
                             {% for person in book.illustrator %}
                             <li class="credit"><a href="{% add_filter 'illustrator' person.name %}">{{ person.name }}</a> (Illus.)</li>
                             {% endfor %}
