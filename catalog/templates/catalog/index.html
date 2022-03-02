@@ -10,30 +10,37 @@
 </head>
 <body>
     <div class="controls">
-        <form method="get" action="{% url 'find_book' %}">
-            <input type="text" name="isbn"/>
-            <button>Find by ISBN</button>
-        </form>
+        {{ page_obj.paginator.count }} results
     </div>
 
     {% include './pagination.html' %}
 
-    <form method="post" action="">
-        {% csrf_token %}
-        <select name="filter_name">
-            {% for filter_label, filter_name in filter_names.items %}
-            <option value="{{ filter_name }}">{{ filter_label }}</option>
-            {% endfor %}
-        </select>
-        <select name="filter_operation">
-            <option value="~">matches</option>
-            <option value="">is</option>
-            <option value="^">begins with</option>
-            <option value="$">ends with</option>
-        </select>
-        <input type="text" name="filter_value"/>
-        <button>Add filter</button>
-    </form>
+    <div class="controls">
+        <form method="get" action="" class="search-form">
+            <input type="search" name="q" value="{{ filters.q.value }}" size="30"/>
+            <button>Search</button>
+        </form>
+        <form method="get" action="" class="search-form">
+            <input type="text" name="isbn" value="{{ filters.isbn.value }}" size="13"/>
+            <button>Find by ISBN</button>
+        </form>
+        <form method="post" action="" class="search-form">
+            {% csrf_token %}
+            <select name="filter_name">
+                {% for filter_label, filter_name in filter_names.items %}
+                <option value="{{ filter_name }}">{{ filter_label }}</option>
+                {% endfor %}
+            </select>
+            <select name="filter_operation">
+                <option value="~">matches</option>
+                <option value="">is</option>
+                <option value="^">begins with</option>
+                <option value="$">ends with</option>
+            </select>
+            <input type="text" name="filter_value"/>
+            <button>Add filter</button>
+        </form>
+    </div>
 
     {% include './filters.html' %}
 

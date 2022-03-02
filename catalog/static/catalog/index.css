@@ -63,3 +63,10 @@ a:hover {
 	margin-right: .5em;
 	border-radius: .5em;
 }
+.search-form {
+    display: inline-block;
+    margin-right: 2em;
+}
+tr:hover {
+    background: #eee;
+}

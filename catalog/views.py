@@ -36,6 +36,12 @@ class FilterSet:
     def __iter__(self):
         yield from self.filters
 
+    def __getitem__(self, item):
+        for f in self.filters:
+            if f.name == item:
+                return f
+        return None
+
     def __repr__(self):
         params = ' '.join(f'{f.name}={f.value}' for f in self)
         return f'<{self.__class__.__name__} {params}>'
@@ -135,6 +141,8 @@ FILTER_TEMPLATES = {
     'category': lambda value: CATEGORIES.get(value, None),
     'format': lambda value: Q(format=value),
     'year': lambda value: Q(publication_date=value),
+    'isbn': lambda value: Q(isbn=value),
+    'q': lambda value: Q(title__icontains=value) | Q(persons__name__icontains=value),
     **filter_group('title'),
     **filter_group('publisher'),
     **filter_group('series', 'series__title'),
@@ -189,7 +197,7 @@ def index(request: HttpRequest) -> HttpResponse:
 
     first_author = Credit.objects.filter(book=OuterRef('pk'), order=1)[:1]
 
-    booklist = booklist.order_by(
+    booklist = booklist.distinct().order_by(
         Subquery(first_author.values('person__sort_name')),
         'publication_date'
     )
