@@ -26,8 +26,8 @@
             {% endfor %}
         </select>
         <select name="filter_operation">
-            <option>is</option>
             <option value="~">matches</option>
+            <option value="">is</option>
             <option value="^">begins with</option>
             <option value="$">ends with</option>
         </select>
@@ -35,17 +35,7 @@
         <button>Add filter</button>
     </form>
 
-    {% if filters %}
-    <ul class="filters">
-        {% for filter in filter_removal_links %}
-        <li class="filter">
-            <span class="filter-label">{{ filter.label }}</span>
-            <a href="{{ filter.href }}" title="Remove {{ filter.label }}">×</a>
-        </li>
-        {% endfor %}
-        <li class="clear-filter"><a href="{% url 'index' %}">Clear All Filters</a></li>
-    </ul>
-    {% endif %}
+    {% include './filters.html' %}
 
     <form method="post" action="{% url 'books' %}">
         {% csrf_token %}

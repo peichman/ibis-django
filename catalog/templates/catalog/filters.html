@@ -1,0 +1,12 @@
+{% load url_query %}
+{% if filters %}
+<ul class="filters">
+    {% for filter in filters %}
+    <li class="filter">
+	<span class="filter-label">{{ filter.label }}</span>
+	<a href="{% remove_filter filter.name filter.value %}" title="Remove {{ filter.label }}">×</a>
+    </li>
+    {% endfor %}
+    <li class="clear-filter"><a href="{% url 'index' %}">Clear All Filters</a></li>
+</ul>
+{% endif %}

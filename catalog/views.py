@@ -1,4 +1,5 @@
 import re
+from collections import namedtuple
 from urllib.parse import urlencode
 
 import isbnlib
@@ -19,6 +20,9 @@ from .models import Book, Credit, Person, Tag
 from .utils import get_classifier_tags, getlines, split_title
 
 
+Filter = namedtuple('Filter', ('name', 'value', 'label'))
+
+
 class FilterSet:
     def __init__(self):
         self.filters = []
@@ -33,19 +37,16 @@ class FilterSet:
         yield from self.filters
 
     def __repr__(self):
-        rep = '<' + self.__class__.__name__
-        for name, value in self:
-            rep += f' {name}={value}'
-        rep += '>'
-        return rep
+        params = ' '.join(f'{f.name}={f.value}' for f in self)
+        return f'<{self.__class__.__name__} {params}>'
 
     def __str__(self):
-        return urlencode([f[:2] for f in self.filters]) if self.filters else ''
+        return urlencode([(f.name, f.value) for f in self.filters], safe='~^$') if self.filters else ''
 
     def add(self, name, value, label=None):
         if label is None:
             label = f'{name}: {value}'
-        self.filters.append((name, value, label))
+        self.filters.append(Filter(name, value, label))
 
 
 class PaginationLinks:
@@ -105,38 +106,51 @@ PREDICATES = {
 }
 
 
-def create_filter(value_arg):
-    def fn(_name, value):
-        return Q(**{value_arg: value})
-    return fn
+class QueryTemplate:
+    def __init__(self, value_field, extra_fields=None):
+        if extra_fields is None:
+            extra_fields = {}
+        self.value_field = value_field
+        self.extra_fields = extra_fields
+
+    def __call__(self, value):
+        params = {self.value_field: value}
+        params.update(self.extra_fields)
+        return Q(**params)
+
+    def __repr__(self):
+        return repr(self('_'))
 
 
-def filter_group(param_name, query_field=None):
-    if query_field is None:
-        query_field = param_name
+def filter_group(param_name, value_field=None, **extra_fields):
+    if value_field is None:
+        value_field = param_name
     return {
-        param_name + suffix: create_filter('__'.join((query_field, predicate)))
+        param_name + suffix: QueryTemplate(f'{value_field}__{predicate}', extra_fields)
         for suffix, predicate in PREDICATES.items()
     }
 
 
 FILTER_TEMPLATES = {
-    'category': lambda name, value: CATEGORIES.get(value, None),
-    'tag': lambda name, value: Q(tags__value=value),
-    'format': lambda name, value: Q(format=value),
-    'publisher': lambda name, value: Q(publisher=value),
-    'publisher~': lambda name, value: Q(publisher__icontains=value),
-    'year': lambda name, value: Q(publication_date=value),
-    **filter_group('series', 'series__title'),
+    'category': lambda value: CATEGORIES.get(value, None),
+    'format': lambda value: Q(format=value),
+    'year': lambda value: Q(publication_date=value),
     **filter_group('title'),
-    **{role: lambda name, value: Q(credit__role=name, persons__name=value) for role in Credit.Role.values},
-    **{f'{role}~': lambda name, value: Q(credit__role=name.rstrip('~'), persons__name__icontains=value) for role in
-       Credit.Role.values},
+    **filter_group('publisher'),
+    **filter_group('series', 'series__title'),
+    **filter_group('tag', 'tags__value'),
 }
+for role in Credit.Role.values:
+    FILTER_TEMPLATES.update(filter_group(role, value_field='persons__name', credit__role=role))
+
 
 FILTER_LABELS = {
     'Title': 'title',
-    'Series': 'series'
+    'Author': 'author',
+    'Editor': 'editor',
+    'Series': 'series',
+    'Tag': 'tag',
+    'Publisher': 'publisher',
 }
 
 PAGE_PARAM_NAME = 'page'
@@ -160,7 +174,7 @@ def index(request: HttpRequest) -> HttpResponse:
     for param_name in request.GET.keys():
         if param_name in FILTER_TEMPLATES:
             for param_value in request.GET.getlist(param_name):
-                filter_query = FILTER_TEMPLATES[param_name](param_name, param_value)
+                filter_query = FILTER_TEMPLATES[param_name](param_value)
                 if filter_query is not None:
                     booklist = booklist.filter(filter_query)
                     if param_name.endswith('~'):
@@ -185,21 +199,12 @@ def index(request: HttpRequest) -> HttpResponse:
 
     url = URLObject(request.build_absolute_uri())
 
-    filter_removal_links = [
-        {
-            'label': label,
-            'href': url.del_query_param_value(name, value).del_query_param(PAGE_PARAM_NAME)
-        }
-        for name, value, label in filters
-    ]
-
     return render(request, 'catalog/index.html', context={
         'url': url,
         'categories': CATEGORIES.keys(),
         'filter_names': FILTER_LABELS,
         'page_obj': page,
         'filters': filters,
-        'filter_removal_links': filter_removal_links,
         'page_links': PaginationLinks(url, page, PAGE_PARAM_NAME),
         'isbn_form': SingleISBNForm()
     })
