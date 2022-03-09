@@ -1,3 +1,4 @@
+import requests
 from isbnlib import classify
 from isbnlib.dev import ServiceIsDownError
 from titlecase import titlecase
@@ -27,3 +28,8 @@ def split_title(title: str, separator: str = ' - ') -> list[str, str]:
         return [titlecase(s) for s in title.split(separator, 1)]
     else:
         return [titlecase(title), '']
+
+
+def get_format(isbn):
+    r = requests.get(f'https://openlibrary.org/isbn/{isbn}.json')
+    return r.json().get('physical_format', '?').lower() if r.ok else '?'
