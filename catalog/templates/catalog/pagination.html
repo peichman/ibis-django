@@ -1,17 +1,19 @@
-<div class="pagination">
-    <span class="step-links">
-        <a href="{{ page_links.first }}">&laquo; first</a>
-        {% if page_links.previous %}
-            <a href="{{ page_links.previous }}">previous</a>
-        {% endif %}
+{% if page_links %}
+    <div class="pagination">
+        <span class="step-links">
+            <a href="{{ page_links.first }}">&laquo; first</a>
+            {% if page_links.previous %}
+                <a href="{{ page_links.previous }}">previous</a>
+            {% endif %}
 
-        <span class="current">
-            Page {{ page_links.page_number }} of {{ page_links.num_pages }}
+            <span class="current">
+                Page {{ page_links.page_number }} of {{ page_links.num_pages }}
+            </span>
+
+            {% if page_links.next %}
+                <a href="{{ page_links.next }}">next</a>
+            {% endif %}
+            <a href="{{ page_links.last }}">last &raquo;</a>
         </span>
-
-        {% if page_links.next %}
-            <a href="{{ page_links.next }}">next</a>
-        {% endif %}
-        <a href="{{ page_links.last }}">last &raquo;</a>
-    </span>
-</div>
+    </div>
+{% endif %}

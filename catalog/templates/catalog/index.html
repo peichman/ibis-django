@@ -2,6 +2,8 @@
 {% load static %}
 {% load redirect_tag %}
 {% load url_query %}
+{% load search_form %}
+{% load pagination %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -13,17 +15,12 @@
         {{ page_obj.paginator.count }} results
     </div>
 
-    {% include './pagination.html' %}
+    {% paginate %}
 
     <div class="controls">
-        <form method="get" action="" class="search-form">
-            <input type="search" name="q" value="{{ filters.q.value }}" size="30"/>
-            <button>Search</button>
-        </form>
-        <form method="get" action="" class="search-form">
-            <input type="text" name="isbn" value="{{ filters.isbn.value }}" size="13"/>
-            <button>Find by ISBN</button>
-        </form>
+        {% search_form "Search" 30 q=filters.q %}
+        {% search_form "Find by ISBN" 13 isbn=filters.isbn %}
+
         <form method="post" action="" class="search-form">
             {% csrf_token %}
             <select name="filter_name">
@@ -123,7 +120,7 @@
         </div>
     </form>
 
-    {% include './pagination.html' %}
+    {% paginate %}
 
     <div class="controls">
         <a href="{% url 'import_books' %}">Import Book Titles</a> —

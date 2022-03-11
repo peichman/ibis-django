@@ -1,0 +1,6 @@
+<form method="get" action="" class="search-form">
+  {% for name, filter in filters.items %}
+  <input type="search" name="{{ name }}" value="{{ filter.value }}" size="{{ input_size }}"/>
+  {% endfor %}
+  <button>{{ button_label }}</button>
+</form>
