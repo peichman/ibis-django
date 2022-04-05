@@ -1,9 +1,10 @@
 import re
 from collections import namedtuple
+from functools import reduce
+from typing import Iterable
 from urllib.parse import urlencode
 
 import isbnlib
-import requests
 from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator, Page
 from django.db.models import OuterRef, Subquery, Q
@@ -131,6 +132,10 @@ def filter_group(param_name, value_field=None, **extra_fields):
     }
 
 
+def combine(dict_iter: Iterable[dict]) -> dict:
+    return reduce(lambda a, b: {**a, **b}, dict_iter)
+
+
 FILTER_TEMPLATES = {
     'category': lambda value: CATEGORIES.get(value, None),
     'format': lambda value: Q(format=value),
@@ -141,9 +146,8 @@ FILTER_TEMPLATES = {
     **filter_group('publisher'),
     **filter_group('series', 'series__title'),
     **filter_group('tag', 'tags__value'),
+    **combine(filter_group(role, value_field='persons__name', credit__role=role) for role in Credit.Role.values)
 }
-for role in Credit.Role.values:
-    FILTER_TEMPLATES.update(filter_group(role, value_field='persons__name', credit__role=role))
 
 
 FILTER_LABELS = {
