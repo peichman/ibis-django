@@ -1,12 +1,9 @@
 import re
-from collections import namedtuple
-from functools import reduce
-from typing import Iterable
 from urllib.parse import urlencode
 
 import isbnlib
 from django.core.exceptions import BadRequest
-from django.core.paginator import Paginator, Page
+from django.core.paginator import Paginator
 from django.db.models import OuterRef, Subquery, Q
 from django.http import HttpRequest, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -18,123 +15,14 @@ from urlobject import URLObject
 
 from .forms import ImportForm, SingleISBNForm, BulkEditBooksForm
 from .models import Book, Credit, Person, Tag
-from .utils import get_classifier_tags, getlines, split_title, get_format
-
-Filter = namedtuple('Filter', ('name', 'value', 'label'))
-
-
-class FilterSet:
-    def __init__(self):
-        self.filters = []
-
-    def __len__(self):
-        return len(self.filters)
-
-    def __bool__(self):
-        return len(self) > 0
-
-    def __iter__(self):
-        yield from self.filters
-
-    def __getitem__(self, item):
-        for f in self.filters:
-            if f.name == item:
-                return f
-        return None
-
-    def __repr__(self):
-        params = ' '.join(f'{f.name}={f.value}' for f in self)
-        return f'<{self.__class__.__name__} {params}>'
-
-    def __str__(self):
-        return urlencode([(f.name, f.value) for f in self.filters], safe='~^$') if self.filters else ''
-
-    def add(self, name, value, label=None):
-        if label is None:
-            label = f'{name}: {value}'
-        self.filters.append(Filter(name, value, label))
-
-
-class PaginationLinks:
-    def __init__(self, url: URLObject, page: Page, param_name='page'):
-        self.url = url
-        self.page = page
-        self.param_name = param_name
-
-    @property
-    def page_number(self):
-        return self.page.number
-
-    @property
-    def num_pages(self):
-        return self.page.paginator.num_pages
-
-    @property
-    def first(self):
-        return self.url.set_query_param(self.param_name, 1)
-
-    @property
-    def last(self):
-        return self.url.set_query_param(self.param_name, self.num_pages)
-
-    @property
-    def previous(self):
-        if self.page.has_previous():
-            return self.url.set_query_param(self.param_name, self.page.previous_page_number())
-        else:
-            return None
-
-    @property
-    def next(self):
-        if self.page.has_next():
-            return self.url.set_query_param(self.param_name, self.page.next_page_number())
-        else:
-            return None
-
+from .utils import get_classifier_tags, getlines, split_title, get_format, filter_group, combine, FilterSet, \
+    PaginationLinks
 
 CATEGORIES = {
     'fiction': Q(tags__value__in=['novel', 'short stories']),
     'non-fiction': ~Q(tags__value__in=['novel', 'short stories', 'poetry', 'comics', 'play']),
     'translated': Q(credit__role=Credit.Role.TRANSLATOR),
 }
-
-
-PREDICATES = {
-    '': 'iexact',
-    '~': 'icontains',
-    '^': 'istartswith',
-    '$': 'iendswith'
-}
-
-
-class QueryTemplate:
-    def __init__(self, value_field, extra_fields=None):
-        if extra_fields is None:
-            extra_fields = {}
-        self.value_field = value_field
-        self.extra_fields = extra_fields
-
-    def __call__(self, value):
-        params = {self.value_field: value}
-        params.update(self.extra_fields)
-        return Q(**params)
-
-    def __repr__(self):
-        return repr(self('_'))
-
-
-def filter_group(param_name, value_field=None, **extra_fields):
-    if value_field is None:
-        value_field = param_name
-    return {
-        param_name + suffix: QueryTemplate(f'{value_field}__{predicate}', extra_fields)
-        for suffix, predicate in PREDICATES.items()
-    }
-
-
-def combine(dict_iter: Iterable[dict]) -> dict:
-    return reduce(lambda a, b: {**a, **b}, dict_iter)
-
 
 FILTER_TEMPLATES = {
     'category': lambda value: CATEGORIES.get(value, None),
@@ -148,7 +36,6 @@ FILTER_TEMPLATES = {
     **filter_group('tag', 'tags__value'),
     **combine(filter_group(role, value_field='persons__name', credit__role=role) for role in Credit.Role.values)
 }
-
 
 FILTER_LABELS = {
     'Title': 'title',
