@@ -48,6 +48,8 @@ FILTER_LABELS = {
 
 PAGE_PARAM_NAME = 'page'
 
+PAGE_SIZE = 10
+
 
 def append_filter(request: HttpRequest) -> HttpResponseRedirect:
     url = URLObject(request.build_absolute_uri())
@@ -74,7 +76,7 @@ def index(request: HttpRequest) -> HttpResponse:
         'publication_date'
     )
 
-    paginator = Paginator(booklist, 10)
+    paginator = Paginator(booklist, PAGE_SIZE)
     page = paginator.get_page(request.GET.get(PAGE_PARAM_NAME, 1))
 
     url = URLObject(request.build_absolute_uri())
