@@ -64,21 +64,8 @@ def index(request: HttpRequest) -> HttpResponse:
     booklist = Book.objects.all()
     filters = FilterSet()
 
-    for param_name in request.GET.keys():
-        if param_name in FILTER_TEMPLATES:
-            for param_value in request.GET.getlist(param_name):
-                filter_query = FILTER_TEMPLATES[param_name](param_value)
-                if filter_query is not None:
-                    booklist = booklist.filter(filter_query)
-                    if param_name.endswith('~'):
-                        filter_label = f'{param_name.rstrip("~")} matches "{param_value}"'
-                    elif param_name.endswith('^'):
-                        filter_label = f'{param_name.rstrip("^")} begins with "{param_value}"'
-                    elif param_name.endswith('$'):
-                        filter_label = f'{param_name.rstrip("$")} ends with "{param_value}"'
-                    else:
-                        filter_label = f'{param_name}: {param_value}'
-                    filters.add(param_name, param_value, filter_label)
+    for filter_query in filters.build(FILTER_TEMPLATES, request.GET):
+        booklist = booklist.filter(filter_query)
 
     first_author = Credit.objects.filter(book=OuterRef('pk'), order=1)[:1]
 

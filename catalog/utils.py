@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 import requests
 from django.core.paginator import Page
 from django.db.models import Q
+from django.http import QueryDict
 from isbnlib import classify
 from isbnlib.dev import ServiceIsDownError
 from titlecase import titlecase
@@ -15,6 +16,23 @@ Filter = namedtuple('Filter', ('name', 'value', 'label'))
 
 
 class FilterSet:
+    def build(self, templates: dict, query_params: QueryDict):
+        for param_name in query_params.keys():
+            if param_name in templates:
+                for param_value in query_params.getlist(param_name):
+                    filter_query = templates[param_name](param_value)
+                    if filter_query is not None:
+                        if param_name.endswith('~'):
+                            filter_label = f'{param_name.rstrip("~")} matches "{param_value}"'
+                        elif param_name.endswith('^'):
+                            filter_label = f'{param_name.rstrip("^")} begins with "{param_value}"'
+                        elif param_name.endswith('$'):
+                            filter_label = f'{param_name.rstrip("$")} ends with "{param_value}"'
+                        else:
+                            filter_label = f'{param_name}: {param_value}'
+                        self.add(param_name, param_value, filter_label)
+                        yield filter_query
+
     def __init__(self):
         self.filters = []
 
