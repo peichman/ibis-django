@@ -1,21 +1,18 @@
 import re
 from urllib.parse import urlencode
 
-import isbnlib
 from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
 from django.db.models import OuterRef, Subquery, Q
 from django.http import HttpRequest, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
-from isbnlib import is_isbn10, is_isbn13
-from nameparser import HumanName
 from nameparser.config import CONSTANTS
 from urlobject import URLObject
 
 from .forms import ImportForm, SingleISBNForm, BulkEditBooksForm
 from .models import Book, Credit, Person, Tag
-from .utils import get_classifier_tags, getlines, split_title, get_format, filter_group, combine, FilterSet, \
+from .utils import getlines, filter_group, combine, FilterSet, \
     PaginationLinks
 
 CATEGORIES = {
@@ -149,40 +146,7 @@ def import_by_isbn(request: HttpRequest):
         CONSTANTS.string_format = sort_name_format
 
         for isbn in isbns:
-            if not (is_isbn10(isbn) or is_isbn13(isbn)):
-                # skip this, not an ISBN
-                # TODO: log this
-                continue
-
-            book, book_is_new = Book.objects.get_or_create(isbn=isbn)
-
-            if not book_is_new:
-                # skip this book, it is already in the catalog
-                # TODO: log this
-                continue
-
-            metadata = isbnlib.meta(isbn)
-            # TODO: what to do if metadata is empty?
-
-            book.title, book.subtitle = split_title(metadata.get('Title', isbn))
-            book.publisher = metadata.get('Publisher') or '?'
-            book.publication_date = metadata.get('Year') or '?'
-            book.format = get_format(isbn)
-            book.save()
-
-            author_names = [HumanName(author) for author in metadata.get('Authors', [])]
-
-            for i, author_name in enumerate(author_names, start=1):
-                author, _is_new = Person.objects.get_or_create(
-                    name=author_name.original,
-                    defaults={'sort_name': str(author_name)}
-                )
-                book.add_author(author, order=i)
-
-            # add tags for classifiers
-            for tag_value in get_classifier_tags(isbn):
-                tag, _ = Tag.objects.get_or_create(value=tag_value)
-                book.tags.add(tag)
+            Book.create_from_isbn(isbn)
 
         return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
 

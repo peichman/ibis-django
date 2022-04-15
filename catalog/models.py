@@ -1,7 +1,12 @@
 from uuid import uuid4
 
+import isbnlib
 from django.db import models
 from django.db.models import QuerySet
+from isbnlib import is_isbn10, is_isbn13
+from nameparser import HumanName
+
+from catalog.utils import split_title, get_format, get_classifier_tags
 
 
 class Person(models.Model):
@@ -41,6 +46,45 @@ class Book(models.Model):
     format = models.CharField(max_length=32, choices=Format.choices)
     tags = models.ManyToManyField(Tag, related_name='books')
     uuid = models.UUIDField('UUID', default=uuid4)
+
+    @classmethod
+    def create_from_isbn(cls, isbn):
+        if not (is_isbn10(isbn) or is_isbn13(isbn)):
+            # skip this, not an ISBN
+            # TODO: log this
+            return
+
+        book, book_is_new = cls.objects.get_or_create(isbn=isbn)
+
+        if not book_is_new:
+            # skip this book, it is already in the catalog
+            # TODO: log this
+            return
+
+        metadata = isbnlib.meta(isbn)
+        # TODO: what to do if metadata is empty?
+
+        book.title, book.subtitle = split_title(metadata.get('Title', isbn))
+        book.publisher = metadata.get('Publisher') or '?'
+        book.publication_date = metadata.get('Year') or '?'
+        book.format = get_format(isbn)
+        book.save()
+
+        author_names = [HumanName(author) for author in metadata.get('Authors', [])]
+
+        for i, author_name in enumerate(author_names, start=1):
+            author, _is_new = Person.objects.get_or_create(
+                name=author_name.original,
+                defaults={'sort_name': str(author_name)}
+            )
+            book.add_author(author, order=i)
+
+        # add tags for classifiers
+        for tag_value in get_classifier_tags(isbn):
+            tag, _ = Tag.objects.get_or_create(value=tag_value)
+            book.tags.add(tag)
+
+        return book
 
     def __str__(self):
         names = ', '.join(str(credit.person_with_role) for credit in self.credits())
