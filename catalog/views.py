@@ -103,7 +103,7 @@ def show_book(request: HttpRequest, book_id: int):
 
 
 def show_person(request: HttpRequest, person_id):
-    person = Person.objects.get(pk=person_id)
+    person = get_object_or_404(Person, pk=person_id)
     return render(request, 'catalog/person.html', context={
         'person': person,
         'credits': person.credits.order_by('book__publication_date')
