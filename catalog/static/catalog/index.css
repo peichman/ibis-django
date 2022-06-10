@@ -33,6 +33,9 @@ a:hover {
 .book-subtitle {
     color: #999;
 }
+.book-series a {
+    color: #99f;
+}
 .book-series:before,
 .book-subtitle:before {
     content: " — ";
