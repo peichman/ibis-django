@@ -8,79 +8,93 @@
   <link rel="stylesheet" type="text/css" href="{% static 'catalog/book.css' %}"/>
 </head>
 <body>
+<p>
+  <a href="{% url 'index' %}">Catalog Index</a>
+</p>
+
 <h1>{{ book }}</h1>
 
-<div class="book-metadata">
-  <h2>Metadata</h2>
-  <dl>
-    <dt>Title</dt>
-    <dd>{{ book.title }}</dd>
-    {% if book.subtitle %}
-    <dt>Subtitle</dt>
-    <dd>{{ book.subtitle }}</dd>
-    {% endif %}
-    {% for credit in book.credits.all %}
-    <dt>{{ credit.role.capitalize }}</dt>
-    <dd>
+<div class="book-details">
+  <div class="book-cover">
+    <a href="https://openlibrary.org/isbn/{{ book.isbn }}">
+      <img src="https://covers.openlibrary.org/b/isbn/{{ book.isbn }}-M.jpg"/>
+    </a>
+  </div>
+
+  <div class="book-metadata">
+    <h2>Metadata</h2>
+    <dl>
+      <dt>Title</dt>
+      <dd>{{ book.title }}</dd>
+      {% if book.subtitle %}
+      <dt>Subtitle</dt>
+      <dd>{{ book.subtitle }}</dd>
+      {% endif %}
+      {% for credit in book.credits.all %}
+      <dt>{{ credit.role.capitalize }}</dt>
+      <dd>
       <a href="{% url 'show_person' credit.person.id %}">
-        {{ credit.person.name }}
+	{{ credit.person.name }}
       </a>
-    </dd>
-    {% endfor %}
+      </dd>
+      {% endfor %}
 
-    {% for serial in book.series_memberships %}
-    <dt>Series</dt>
-    <dd><a href="{% url 'index' %}?series={{ serial.series.title }}">{{ serial.series.title }}</a> Book {{ serial.order }}</dd>
-    {% endfor %}
+      {% for serial in book.series_memberships %}
+      <dt>Series</dt>
+      <dd><a href="{% url 'index' %}?series={{ serial.series.title }}">{{ serial.series.title }}</a> Book {{ serial.order }}</dd>
+      {% endfor %}
 
-    <dt>Published</dt>
-    <dd>{{ book.publication_date }}</dd>
-    <dt>Publisher</dt>
-    <dd>{{ book.publisher }}</dd>
-    <dt>Format</dt>
-    <dd>{{ book.format.capitalize }}</dd>
+      <dt>Published</dt>
+      <dd>{{ book.publication_date }}</dd>
+      <dt>Publisher</dt>
+      <dd>{{ book.publisher }}</dd>
+      <dt>Format</dt>
+      <dd>{{ book.format.capitalize }}</dd>
 
-    <dt>ISBN</dt>
-    <dd>{{ book.isbn }}</dd>
-    <dt>UUID</dt>
-    <dd>{{ book.uuid }}</dd>
+      <dt>ISBN</dt>
+      <dd>{{ book.isbn }}</dd>
+      <dt>UUID</dt>
+      <dd>{{ book.uuid }}</dd>
 
-    {% for tag in book.sorted_tags %}
-    <dt class="label-tag">Tag</dt>
-    <dd class="value-tag"><a href="{% url 'index' %}?tag={{ tag }}">{{ tag }}</a></dd>
-    {% endfor %}
-    <dt></dt>
-    <dd>
+      {% for tag in book.sorted_tags %}
+      <dt class="label-tag">Tag</dt>
+      <dd class="value-tag"><a href="{% url 'index' %}?tag={{ tag }}">{{ tag }}</a></dd>
+      {% endfor %}
+      <dt></dt>
+      <dd>
       <form method="post" action="">
-        {% csrf_token %}
-        <input name="tag"/> <button>Add Tag</button>
+	{% csrf_token %}
+	<input name="tag"/> <button>Add Tag</button>
       </form>
-    </dd>
-  </dl>
-</div>
+      </dd>
+    </dl>
 
-{% if book.classifiers %}
-<div class="book-classifiers">
-  <h2>Classifiers</h2>
-  <dl>
-    {% for type, value in book.classifiers.items %}
-    <dt>{{ type.upper|abbr }}</dt>
-    {% if type == 'fast' %}
-    <dd>
+    <p>Cover image courtesy of <a href="https://openlibrary.org/">Open Library</a>.</p>
+  </div>
+
+  {% if book.classifiers %}
+  <div class="book-classifiers">
+    <h2>Classifiers</h2>
+    <dl>
+      {% for type, value in book.classifiers.items %}
+      <dt>{{ type.upper|abbr }}</dt>
+      {% if type == 'fast' %}
+      <dd>
       <dl>
-        {% for k, v in value.items %}
-        <dt>{{ k }}</dt>
-        <dd>{{ v }}</dd>
-        {% endfor %}
+	{% for k, v in value.items %}
+	<dt>{{ k }}</dt>
+	<dd>{{ v }}</dd>
+	{% endfor %}
       </dl>
-    </dd>
-    {% else %}
-    <dd>{{ value }}</dd>
-    {% endif %}
-    {% endfor %}
-  </dl>
+      </dd>
+      {% else %}
+      <dd>{{ value }}</dd>
+      {% endif %}
+      {% endfor %}
+    </dl>
+  </div>
+  {% endif %}
 </div>
-{% endif %}
 
 <p>
   <a href="{% url 'index' %}">Catalog Index</a>

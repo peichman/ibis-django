@@ -1,9 +1,21 @@
+.book-details {
+    display: grid;
+    grid-template-areas: "cover metadata";
+	grid-column-gap: 1em;
+	grid-template-columns: 200px 1fr;
+}
+.book-cover {
+    grid-area: cover;
+    margin: 1em;
+}
+.book-metadata {
+    grid-area: metadata;
+}
 dl {
 	display: grid;
 	grid-template-areas: "key value";
 	grid-row-gap: .5em;
 	grid-template-columns: 10em 1fr;
-	margin: 0;
 }
 dt {
     font-weight: bold;
