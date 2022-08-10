@@ -14,3 +14,9 @@ class SingleISBNForm(forms.Form):
 
 class BulkEditBooksForm(forms.Form):
     format = forms.ChoiceField(choices=Book.Format.choices)
+
+
+class BookForm(forms.ModelForm):
+    class Meta:
+        model = Book
+        exclude = ['persons', 'tags']

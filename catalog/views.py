@@ -7,10 +7,11 @@ from django.db.models import OuterRef, Subquery, Q
 from django.http import HttpRequest, HttpResponseRedirect, HttpResponse, Http404
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from django.views.generic import DetailView
 from nameparser.config import CONSTANTS
 from urlobject import URLObject
 
-from .forms import ImportForm, SingleISBNForm, BulkEditBooksForm
+from .forms import ImportForm, SingleISBNForm, BulkEditBooksForm, BookForm
 from .models import Book, Credit, Person, Tag
 from .utils import getlines, filter_group, combine, FilterSet, \
     PaginationLinks, find_object
@@ -206,3 +207,14 @@ def find(request):
         raise Http404(f"Could not find anything with the UUID {uuid}")
 
     return HttpResponseRedirect(reverse(view_name, args=[obj.id]))
+
+
+class EditBookView(DetailView):
+    model = Book
+    context_object_name = 'book'
+    template_name = 'catalog/edit_book.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = BookForm(instance=self.object)
+        return context
