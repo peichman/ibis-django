@@ -1,9 +1,10 @@
 from collections import namedtuple
 from functools import reduce
-from typing import Iterable
+from typing import Iterable, Mapping, Any
 from urllib.parse import urlencode
 
 import requests
+from django.core.exceptions import ValidationError, BadRequest
 from django.core.paginator import Page
 from django.db.models import Q
 from django.http import QueryDict
@@ -167,3 +168,18 @@ def filter_group(param_name, value_field=None, **extra_fields):
 
 def combine(dict_iter: Iterable[dict]) -> dict:
     return reduce(lambda a, b: {**a, **b}, dict_iter)
+
+
+def find_object(uuid: str, search_targets: Mapping[Any, str]):
+    for cls, view_name in search_targets.items():
+        try:
+            obj = cls.objects.get(uuid=uuid)
+        except ValidationError:
+            raise BadRequest(f"Not a valid UUID: {uuid}")
+        except cls.DoesNotExist:
+            pass
+        else:
+            return obj, view_name
+
+    # found nothing
+    return None, None
