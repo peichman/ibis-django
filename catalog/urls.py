@@ -11,5 +11,6 @@ urlpatterns = [
     path('books/edit', views.bulk_edit_books, name='bulk_edit_books'),
     path('books/<int:book_id>', views.show_book, name='show_book'),
     path('persons/<int:person_id>', views.show_person, name='show_person'),
-    path('books/<int:book_id>/isbn', views.set_isbn, name='set_isbn')
+    path('books/<int:book_id>/isbn', views.set_isbn, name='set_isbn'),
+    path('find', views.find, name='find'),
 ]

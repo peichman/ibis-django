@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
 from django.db.models import OuterRef, Subquery, Q
-from django.http import HttpRequest, HttpResponseRedirect, HttpResponse
+from django.http import HttpRequest, HttpResponseRedirect, HttpResponse, Http404
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from nameparser.config import CONSTANTS
@@ -13,7 +13,7 @@ from urlobject import URLObject
 from .forms import ImportForm, SingleISBNForm, BulkEditBooksForm
 from .models import Book, Credit, Person, Tag
 from .utils import getlines, filter_group, combine, FilterSet, \
-    PaginationLinks
+    PaginationLinks, find_object
 
 CATEGORIES = {
     'fiction': Q(tags__value__in=['novel', 'short stories']),
@@ -196,3 +196,13 @@ def set_isbn(request, book_id):
     book.isbn = isbn
     book.save()
     return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
+
+
+def find(request):
+    uuid = request.GET['uuid']
+    obj, view_name = find_object(uuid, {Book: 'show_book'})
+
+    if obj is None:
+        raise Http404(f"Could not find anything with the UUID {uuid}")
+
+    return HttpResponseRedirect(reverse(view_name, args=[obj.id]))
