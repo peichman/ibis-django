@@ -7,6 +7,7 @@ from django.db.models import OuterRef, Subquery, Q
 from django.http import HttpRequest, HttpResponseRedirect, HttpResponse, Http404
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from django.views import View
 from django.views.generic import DetailView
 from nameparser.config import CONSTANTS
 from urlobject import URLObject
@@ -173,22 +174,23 @@ def books(request: HttpRequest):
             raise BadRequest
 
 
-def bulk_edit_books(request: HttpRequest):
-    if request.method == 'GET':
+class BulkEditBooksView(View):
+    def get(self, *_args, **_kwargs):
         context = {
             'form': BulkEditBooksForm(),
-            'books': [Book.objects.get(pk=book_id) for book_id in request.GET.getlist('book_id')],
-            'redirect': request.GET['redirect']
+            'books': [Book.objects.get(pk=book_id) for book_id in self.request.GET.getlist('book_id')],
+            'redirect': self.request.GET['redirect']
         }
-        return render(request, 'catalog/bulk_edit_books.html', context=context)
-    elif request.method == 'POST':
-        book_ids = request.POST.getlist('book_id')
-        new_format = request.POST['format']
+        return render(self.request, 'catalog/bulk_edit_books.html', context=context)
+
+    def post(self, *_args, **_kwargs):
+        book_ids = self.request.POST.getlist('book_id')
+        new_format = self.request.POST['format']
         for book_id in book_ids:
             book = Book.objects.get(pk=book_id)
             book.format = new_format
             book.save()
-        return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
+        return HttpResponseRedirect(self.request.POST.get('redirect', reverse('index')))
 
 
 def set_isbn(request, book_id):
