@@ -147,10 +147,13 @@ def import_by_isbn(request: HttpRequest):
         sort_name_format = '{last}, {title} {first} {suffix}'
         CONSTANTS.string_format = sort_name_format
 
-        for isbn in isbns:
-            Book.create_from_isbn(isbn)
+        ids = [Book.create_from_isbn(isbn).id for isbn in isbns]
+        if len(ids) == 1:
+            url = reverse('show_book', kwargs={'book_id': ids[0]})
+        else:
+            url = request.POST.get('redirect', reverse('index'))
 
-        return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
+        return HttpResponseRedirect(url)
 
 
 def books(request: HttpRequest):
