@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 import isbnlib
+import requests
 from django.db import models
 from django.db.models import QuerySet
 from isbnlib import is_isbn10, is_isbn13
@@ -26,6 +27,23 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.value
+
+
+class CoverImage:
+    def __init__(self, book: 'Book'):
+        self.book = book
+        self._available = None
+        self._url = f'https://covers.openlibrary.org/b/isbn/{self.book.isbn}-M.jpg'
+
+    @property
+    def url(self):
+        return self._url
+
+    @property
+    def is_available(self):
+        if self._available is None:
+            self._available = requests.head(self._url).ok
+        return self._available
 
 
 class Book(models.Model):
@@ -85,6 +103,10 @@ class Book(models.Model):
             book.tags.add(tag)
 
         return book
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cover_image = CoverImage(self)
 
     def __str__(self):
         names = ', '.join(str(credit.person_with_role) for credit in self.credits())

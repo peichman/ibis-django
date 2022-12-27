@@ -16,9 +16,11 @@
 
 <div class="book-details">
   <div class="book-cover">
+    {% if book.cover_image.is_available %}
     <a href="https://openlibrary.org/isbn/{{ book.isbn }}">
-      <img src="https://covers.openlibrary.org/b/isbn/{{ book.isbn }}-M.jpg"/>
+      <img src="{{ book.cover_image.url }}"/>
     </a>
+    {% endif %}
   </div>
 
   <div class="book-metadata">
@@ -69,7 +71,9 @@
       </dd>
     </dl>
 
+    {% if book.cover_image.is_available %}
     <p>Cover image courtesy of <a href="https://openlibrary.org/">Open Library</a>.</p>
+    {% endif %}
   </div>
 
   {% if book.classifiers %}
