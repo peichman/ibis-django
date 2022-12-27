@@ -1,0 +1,21 @@
+version: "3.7"
+services:
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_USER=ibis
+      - POSTGRES_PASSWORD=ibis
+    volumes:
+      - type: volume
+        source: ibis-data
+        target: /var/lib/postgresql/data
+  app:
+    image: ibis:latest
+    ports:
+      - "8888:8000"
+    environment:
+      - DATABASE_URL=pgsql://ibis:ibis@db:5432/ibis
+      - DEBUG
+      - SECRET_KEY
+volumes:
+  ibis-data:
