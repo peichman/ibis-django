@@ -12,8 +12,9 @@ services:
   app:
     image: ibis:latest
     ports:
-      - "8888:8000"
+      - "8000:8000"
     environment:
+      - ALLOWED_HOSTS
       - DATABASE_URL=pgsql://ibis:ibis@db:5432/ibis
       - DEBUG
       - SECRET_KEY
