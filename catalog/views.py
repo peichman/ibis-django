@@ -95,7 +95,8 @@ def show_book(request: HttpRequest, book_id: int):
     book = get_object_or_404(Book, pk=book_id)
     if request.method == 'GET':
         return render(request, 'catalog/book.html', context={
-            'book': book
+            'book': book,
+            'isbn_form': SingleISBNForm(),
         })
     elif request.method == 'POST':
         if 'tag' in request.POST:

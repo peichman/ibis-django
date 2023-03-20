@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 {% load static %}
 {% load abbr %}
+{% load redirect_tag %}
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -103,5 +104,11 @@
 <p>
   <a href="{% url 'index' %}">Catalog Index</a>
 </p>
+<form class="add-by-isbn" method="post" action="{% url 'import_by_isbn' %}">
+  {% csrf_token %}
+  {% redirect_tag %}
+  Add by ISBN: {{ isbn_form.isbn }}
+  <button>Submit</button>
+</form>
 </body>
 </html>
