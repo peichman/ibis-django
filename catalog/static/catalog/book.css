@@ -40,3 +40,6 @@ dd>dl>dt {
     visibility: hidden;
     border-bottom: 1px solid #ccc;
 }
+dd>form {
+    padding-bottom: .5em;
+}
