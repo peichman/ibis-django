@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Book, Person, Credit, Series, SeriesMembership, Tag
+from .models import Book, Person, Credit, Series, SeriesMembership, Tag, Collection
 
 
 class PersonAdmin(admin.ModelAdmin):
@@ -39,8 +39,13 @@ class SeriesAdmin(admin.ModelAdmin):
     inlines = [SeriesMembershipInline]
 
 
+class CollectionAdmin(admin.ModelAdmin):
+    fields = ['title']
+
+
 # Register your models here.
 admin.site.register(Book, BookAdmin)
 admin.site.register(Person, PersonAdmin)
 admin.site.register(Series, SeriesAdmin)
 admin.site.register(Tag, TagAdmin)
+admin.site.register(Collection, CollectionAdmin)

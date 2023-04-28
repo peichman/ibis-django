@@ -176,3 +176,11 @@ class SeriesMembership(models.Model):
 
     def __str__(self):
         return f'Book {self.order} of {self.series.title}'
+
+
+class Collection(models.Model):
+    title = models.CharField(max_length=1024)
+    books = models.ManyToManyField(Book)
+
+    def __str__(self):
+        return self.title
