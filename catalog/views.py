@@ -13,7 +13,7 @@ from nameparser.config import CONSTANTS
 from urlobject import URLObject
 
 from .forms import ImportForm, SingleISBNForm, BulkEditBooksForm, BookForm
-from .models import Book, Credit, Person, Tag
+from .models import Book, Credit, Tag
 from .utils import getlines, filter_group, combine, FilterSet, \
     PaginationLinks, find_object
 
@@ -60,7 +60,26 @@ def append_filter(request: HttpRequest) -> HttpResponseRedirect:
 
 def index(request: HttpRequest) -> HttpResponse:
     if request.method == 'POST':
-        return append_filter(request)
+        if 'filter_name' in request.POST:
+            return append_filter(request)
+        else:
+            action = request.POST['action']
+            book_ids = request.POST.getlist('book_id')
+            if action == 'tag':
+                # bulk tagging
+                tag_value = request.POST['tag']
+                tag, _ = Tag.objects.get_or_create(value=tag_value)
+                for book_id in book_ids:
+                    book = Book.objects.get(pk=book_id)
+                    book.tags.add(tag)
+                return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
+            elif action == 'edit':
+                # bulk editing
+                qs = [('book_id', book_id) for book_id in book_ids] + [
+                    ('redirect', request.POST.get('redirect', reverse('index')))]
+                return HttpResponseRedirect(reverse('bulk_edit_books') + '?' + urlencode(qs))
+            else:
+                raise BadRequest
 
     booklist = Book.objects.all()
     filters = FilterSet()
@@ -105,14 +124,6 @@ def show_book(request: HttpRequest, book_id: int):
             return HttpResponseRedirect(reverse('show_book', args=[book_id]))
 
 
-def show_person(request: HttpRequest, person_id):
-    person = get_object_or_404(Person, pk=person_id)
-    return render(request, 'catalog/person.html', context={
-        'person': person,
-        'credits': person.credits.order_by('book__publication_date')
-    })
-
-
 def import_books(request: HttpRequest):
     if request.method == 'GET':
         form = ImportForm()
@@ -155,27 +166,6 @@ def import_by_isbn(request: HttpRequest):
             url = request.POST.get('redirect', reverse('index'))
 
         return HttpResponseRedirect(url)
-
-
-def books(request: HttpRequest):
-    if request.method == 'POST':
-        action = request.POST['action']
-        book_ids = request.POST.getlist('book_id')
-        if action == 'tag':
-            # bulk tagging
-            tag_value = request.POST['tag']
-            tag, _ = Tag.objects.get_or_create(value=tag_value)
-            for book_id in book_ids:
-                book = Book.objects.get(pk=book_id)
-                book.tags.add(tag)
-            return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
-        elif action == 'edit':
-            # bulk editing
-            qs = [('book_id', book_id) for book_id in book_ids] + [
-                ('redirect', request.POST.get('redirect', reverse('index')))]
-            return HttpResponseRedirect(reverse('bulk_edit_books') + '?' + urlencode(qs))
-        else:
-            raise BadRequest
 
 
 class BulkEditBooksView(View):

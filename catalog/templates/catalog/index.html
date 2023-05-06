@@ -41,7 +41,7 @@
 
     {% include './filters.html' %}
 
-    <form method="post" action="{% url 'books' %}">
+    <form method="post" action="">
         {% csrf_token %}
         {% redirect_tag %}
         <table>

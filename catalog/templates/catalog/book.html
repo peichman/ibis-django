@@ -36,8 +36,8 @@
       {% for credit in book.credits.all %}
       <dt>{{ credit.role.capitalize }}</dt>
       <dd>
-      <a href="{% url 'show_person' credit.person.id %}">
-	{{ credit.person.name }}
+      <a href="{% url 'index' %}?{{ credit.role }}={{ credit.person.name | urlencode }}">
+        {{ credit.person.name }}
       </a>
       </dd>
       {% endfor %}
