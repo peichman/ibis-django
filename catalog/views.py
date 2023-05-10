@@ -7,8 +7,7 @@ from django.db.models import OuterRef, Subquery, Q
 from django.http import HttpRequest, HttpResponseRedirect, HttpResponse, Http404
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
-from django.views import View
-from django.views.generic import DetailView
+from django.views.generic import DetailView, TemplateView
 from nameparser.config import CONSTANTS
 from urlobject import URLObject
 
@@ -145,14 +144,14 @@ def import_books(request: HttpRequest):
             return HttpResponseRedirect(reverse('index'))
 
 
-def import_by_isbn(request: HttpRequest):
-    if request.method == 'GET':
-        return render(request, 'catalog/import_by_isbn.html')
-    elif request.method == 'POST':
-        if 'isbn' in request.POST:
-            isbns = [request.POST['isbn']]
-        elif 'isbns' in request.POST:
-            isbns = getlines(request.POST['isbns'])
+class ImportByISBNView(TemplateView):
+    template_name = 'catalog/import_by_isbn.html'
+
+    def post(self, *_args, **_kwargs):
+        if 'isbn' in self.request.POST:
+            isbns = [self.request.POST['isbn']]
+        elif 'isbns' in self.request.POST:
+            isbns = getlines(self.request.POST['isbns'])
         else:
             isbns = []
 
@@ -163,19 +162,21 @@ def import_by_isbn(request: HttpRequest):
         if len(ids) == 1:
             url = reverse('show_book', kwargs={'book_id': ids[0]})
         else:
-            url = request.POST.get('redirect', reverse('index'))
+            url = self.request.POST.get('redirect', reverse('index'))
 
         return HttpResponseRedirect(url)
 
 
-class BulkEditBooksView(View):
-    def get(self, *_args, **_kwargs):
-        context = {
+class BulkEditBooksView(TemplateView):
+    template_name = 'catalog/bulk_edit_books.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
             'form': BulkEditBooksForm(),
             'books': [Book.objects.get(pk=book_id) for book_id in self.request.GET.getlist('book_id')],
             'redirect': self.request.GET['redirect']
-        }
-        return render(self.request, 'catalog/bulk_edit_books.html', context=context)
+        })
 
     def post(self, *_args, **_kwargs):
         book_ids = self.request.POST.getlist('book_id')
