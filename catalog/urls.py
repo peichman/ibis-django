@@ -8,7 +8,6 @@ urlpatterns = [
     path('isbn_import', views.ImportByISBNView.as_view(), name='import_by_isbn'),
     path('records', views.BulkEditBooksView.as_view(), name='bulk_edit_books'),
     path('<int:book_id>', views.show_book, name='show_book'),
-    path('<int:book_id>/isbn', views.set_isbn, name='set_isbn'),
     path('<int:pk>/record', views.EditBookView.as_view(), name='edit_book'),
     path('find', views.find, name='find'),
 ]

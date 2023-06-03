@@ -188,14 +188,6 @@ class BulkEditBooksView(TemplateView):
         return HttpResponseRedirect(self.request.POST.get('redirect', reverse('index')))
 
 
-def set_isbn(request, book_id):
-    book = Book.objects.get(pk=book_id)
-    isbn = request.POST['isbn']
-    book.isbn = isbn
-    book.save()
-    return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
-
-
 def find(request):
     uuid = request.GET['uuid']
     obj, view_name = find_object(uuid, {Book: 'show_book'})
