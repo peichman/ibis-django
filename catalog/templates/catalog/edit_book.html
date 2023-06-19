@@ -5,8 +5,9 @@
     <title>Editing: {{ book }}</title>
 </head>
 <body>
-<table>
-    {{ form }}
-</table>
+<form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Update">
+</form>
 </body>
 </html>

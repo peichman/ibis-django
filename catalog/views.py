@@ -5,13 +5,13 @@ from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
 from django.db.models import OuterRef, Subquery, Q
 from django.http import HttpRequest, HttpResponseRedirect, HttpResponse, Http404
-from django.shortcuts import get_object_or_404, render
-from django.urls import reverse
-from django.views.generic import DetailView, TemplateView
+from django.shortcuts import render
+from django.urls import reverse, reverse_lazy
+from django.views.generic import TemplateView, UpdateView, DetailView, FormView
 from nameparser.config import CONSTANTS
 from urlobject import URLObject
 
-from .forms import ImportForm, SingleISBNForm, BulkEditBooksForm, BookForm
+from .forms import ImportForm, SingleISBNForm, BulkEditBooksForm
 from .models import Book, Credit, Tag
 from .utils import getlines, filter_group, combine, FilterSet, \
     PaginationLinks, find_object
@@ -109,39 +109,45 @@ def index(request: HttpRequest) -> HttpResponse:
     })
 
 
-def show_book(request: HttpRequest, book_id: int):
-    book = get_object_or_404(Book, pk=book_id)
-    if request.method == 'GET':
-        return render(request, 'catalog/book.html', context={
-            'book': book,
-            'isbn_form': SingleISBNForm(),
+class BookView(DetailView):
+    model = Book
+    template_name = 'catalog/book.html'
+    context_object_name = 'book'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'form': SingleISBNForm(),
         })
-    elif request.method == 'POST':
-        if 'tag' in request.POST:
-            tag, _ = Tag.objects.get_or_create(value=request.POST['tag'].strip())
-            book.tags.add(tag)
-            return HttpResponseRedirect(reverse('show_book', args=[book_id]))
+        return context
+
+    def post(self):
+        if 'tag' in self.request.POST:
+            tag, _ = Tag.objects.get_or_create(value=self.request.POST['tag'].strip())
+            self.object.tags.add(tag)
+            return HttpResponseRedirect(reverse('show_book', args=[self.object.pk]))
+        else:
+            raise BadRequest
 
 
-def import_books(request: HttpRequest):
-    if request.method == 'GET':
-        form = ImportForm()
-        return render(request, 'catalog/import_books.html', context={'form': form})
-    elif request.method == 'POST':
-        form = ImportForm(request.POST)
-        if form.is_valid():
-            for title in getlines(form.cleaned_data['titles']):
-                m = re.match(r'(.*?)\s*(\d{10,13})$', title)
-                if m:
-                    title = m[1]
-                    isbn = m[2]
-                else:
-                    isbn = ''
+class ImportBooksView(FormView):
+    form_class = ImportForm
+    template_name = 'catalog/import_books.html'
+    success_url = reverse_lazy('index')
 
-                new_book = Book(title=title, isbn=isbn)
-                new_book.save()
-                new_book.credits.add(form.cleaned_data['author'])
-            return HttpResponseRedirect(reverse('index'))
+    def form_valid(self, form):
+        for title in getlines(form.cleaned_data['titles']):
+            m = re.match(r'(.*?)\s*(\d{10,13})$', title)
+            if m:
+                title = m[1]
+                isbn = m[2]
+            else:
+                isbn = ''
+
+            new_book = Book(title=title, isbn=isbn)
+            new_book.save()
+            new_book.credits.add(form.cleaned_data['author'])
+        return super().form_valid(form)
 
 
 class ImportByISBNView(TemplateView):
@@ -198,12 +204,7 @@ def find(request):
     return HttpResponseRedirect(reverse(view_name, args=[obj.id]))
 
 
-class EditBookView(DetailView):
+class EditBookView(UpdateView):
     model = Book
-    context_object_name = 'book'
+    fields = ["title", "publisher", "publication_date", "format"]
     template_name = 'catalog/edit_book.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['form'] = BookForm(instance=self.object)
-        return context

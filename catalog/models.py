@@ -4,6 +4,7 @@ import isbnlib
 import requests
 from django.db import models
 from django.db.models import QuerySet
+from django.urls import reverse
 from isbnlib import is_isbn10, is_isbn13
 from nameparser import HumanName
 
@@ -132,6 +133,9 @@ class Book(models.Model):
 
     def plain_tags(self):
         return self.tags.exclude(value__contains=':').order_by('value')
+
+    def get_absolute_url(self):
+        return reverse("show_book", kwargs={"pk": self.pk})
 
 
 class Series(models.Model):
