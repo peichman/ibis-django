@@ -4,9 +4,10 @@ from urllib.parse import urlencode
 from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
 from django.db.models import OuterRef, Subquery, Q
-from django.http import HttpRequest, HttpResponseRedirect, HttpResponse, Http404
+from django.http import HttpRequest, HttpResponseRedirect, Http404
 from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
+from django.views import View
 from django.views.generic import TemplateView, UpdateView, DetailView, FormView
 from nameparser.config import CONSTANTS
 from urlobject import URLObject
@@ -57,56 +58,57 @@ def append_filter(request: HttpRequest) -> HttpResponseRedirect:
     return HttpResponseRedirect(new_url)
 
 
-def index(request: HttpRequest) -> HttpResponse:
-    if request.method == 'POST':
-        if 'filter_name' in request.POST:
-            return append_filter(request)
+class IndexView(View):
+    def post(self, _request):
+        if 'filter_name' in self.request.POST:
+            return append_filter(self.request)
         else:
-            action = request.POST['action']
-            book_ids = request.POST.getlist('book_id')
+            action = self.request.POST['action']
+            book_ids = self.request.POST.getlist('book_id')
             if action == 'tag':
                 # bulk tagging
-                tag_value = request.POST['tag']
+                tag_value = self.request.POST['tag']
                 tag, _ = Tag.objects.get_or_create(value=tag_value)
                 for book_id in book_ids:
                     book = Book.objects.get(pk=book_id)
                     book.tags.add(tag)
-                return HttpResponseRedirect(request.POST.get('redirect', reverse('index')))
+                return HttpResponseRedirect(self.request.POST.get('redirect', reverse('index')))
             elif action == 'edit':
                 # bulk editing
                 qs = [('book_id', book_id) for book_id in book_ids] + [
-                    ('redirect', request.POST.get('redirect', reverse('index')))]
+                    ('redirect', self.request.POST.get('redirect', reverse('index')))]
                 return HttpResponseRedirect(reverse('bulk_edit_books') + '?' + urlencode(qs))
             else:
                 raise BadRequest
 
-    booklist = Book.objects.all()
-    filters = FilterSet()
+    def get(self, _request):
+        booklist = Book.objects.all()
+        filters = FilterSet()
 
-    for filter_query in filters.build(FILTER_TEMPLATES, request.GET):
-        booklist = booklist.filter(filter_query)
+        for filter_query in filters.build(FILTER_TEMPLATES, self.request.GET):
+            booklist = booklist.filter(filter_query)
 
-    first_author = Credit.objects.filter(book=OuterRef('pk'), order=1)[:1]
+        first_author = Credit.objects.filter(book=OuterRef('pk'), order=1)[:1]
 
-    booklist = booklist.distinct().order_by(
-        Subquery(first_author.values('person__sort_name')),
-        'publication_date'
-    )
+        booklist = booklist.distinct().order_by(
+            Subquery(first_author.values('person__sort_name')),
+            'publication_date'
+        )
 
-    paginator = Paginator(booklist, PAGE_SIZE)
-    page = paginator.get_page(request.GET.get(PAGE_PARAM_NAME, 1))
+        paginator = Paginator(booklist, PAGE_SIZE)
+        page = paginator.get_page(self.request.GET.get(PAGE_PARAM_NAME, 1))
 
-    url = URLObject(request.build_absolute_uri())
+        url = URLObject(self.request.build_absolute_uri())
 
-    return render(request, 'catalog/index.html', context={
-        'url': url,
-        'categories': CATEGORIES.keys(),
-        'filter_names': FILTER_LABELS,
-        'page_obj': page,
-        'filters': filters,
-        'page_links': PaginationLinks(url, page, PAGE_PARAM_NAME),
-        'isbn_form': SingleISBNForm()
-    })
+        return render(self.request, 'catalog/index.html', context={
+            'url': url,
+            'categories': CATEGORIES.keys(),
+            'filter_names': FILTER_LABELS,
+            'page_obj': page,
+            'filters': filters,
+            'page_links': PaginationLinks(url, page, PAGE_PARAM_NAME),
+            'isbn_form': SingleISBNForm()
+        })
 
 
 class BookView(DetailView):
@@ -121,7 +123,7 @@ class BookView(DetailView):
         })
         return context
 
-    def post(self):
+    def post(self, _request):
         if 'tag' in self.request.POST:
             tag, _ = Tag.objects.get_or_create(value=self.request.POST['tag'].strip())
             self.object.tags.add(tag)
@@ -153,7 +155,7 @@ class ImportBooksView(FormView):
 class ImportByISBNView(TemplateView):
     template_name = 'catalog/import_by_isbn.html'
 
-    def post(self, *_args, **_kwargs):
+    def post(self, _request):
         if 'isbn' in self.request.POST:
             isbns = [self.request.POST['isbn']]
         elif 'isbns' in self.request.POST:
@@ -184,7 +186,7 @@ class BulkEditBooksView(TemplateView):
             'redirect': self.request.GET['redirect']
         })
 
-    def post(self, *_args, **_kwargs):
+    def post(self, _request):
         book_ids = self.request.POST.getlist('book_id')
         new_format = self.request.POST['format']
         for book_id in book_ids:
