@@ -1,0 +1,15 @@
+[project]
+name = "ibis-django"
+version = "1.0.0dev"
+dependencies = [
+    "django ~= 3.2",
+    "django-environ",
+    "isbnlib",
+    "nameparser",
+    "psycopg2",
+    "requests",
+    "titlecase",
+    "urlobject",
+    "waitress",
+    "whitenoise",
+]

@@ -78,7 +78,7 @@ class Book(models.Model):
         if not book_is_new:
             # skip this book, it is already in the catalog
             # TODO: log this
-            return
+            return book
 
         metadata = isbnlib.meta(isbn)
         # TODO: what to do if metadata is empty?
@@ -99,9 +99,10 @@ class Book(models.Model):
             book.add_author(author, order=i)
 
         # add tags for classifiers
-        for tag_value in get_classifier_tags(isbn):
-            tag, _ = Tag.objects.get_or_create(value=tag_value)
-            book.tags.add(tag)
+        # XXX: skip getting classifiers for now; see https://github.com/xlcnd/isbnlib/issues/138
+        # for tag_value in get_classifier_tags(isbn):
+        #     tag, _ = Tag.objects.get_or_create(value=tag_value)
+        #     book.tags.add(tag)
 
         return book
 

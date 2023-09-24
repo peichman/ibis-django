@@ -12,7 +12,7 @@ from django.views.generic import TemplateView, UpdateView, DetailView, FormView
 from nameparser.config import CONSTANTS
 from urlobject import URLObject
 
-from .forms import ImportForm, SingleISBNForm, BulkEditBooksForm
+from .forms import ImportForm, SingleISBNForm, BulkEditBooksForm, SingleTagForm
 from .models import Book, Credit, Tag
 from .utils import getlines, filter_group, combine, FilterSet, \
     PaginationLinks, find_object
@@ -119,17 +119,20 @@ class BookView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({
-            'form': SingleISBNForm(),
+            'tag_form': SingleTagForm(),
+            'isbn_form': SingleISBNForm(),
         })
         return context
 
-    def post(self, _request):
-        if 'tag' in self.request.POST:
-            tag, _ = Tag.objects.get_or_create(value=self.request.POST['tag'].strip())
-            self.object.tags.add(tag)
-            return HttpResponseRedirect(reverse('show_book', args=[self.object.pk]))
-        else:
-            raise BadRequest
+
+class BookTagsView(FormView):
+    form_class = SingleTagForm
+
+    def form_valid(self, form):
+        tag, _ = Tag.objects.get_or_create(value=form.cleaned_data['tag'])
+        book = Book.objects.all().get(pk=self.kwargs['pk'])
+        book.tags.add(tag)
+        return HttpResponseRedirect(reverse('show_book', args=[book.pk]))
 
 
 class ImportBooksView(FormView):
@@ -168,7 +171,7 @@ class ImportByISBNView(TemplateView):
 
         ids = [Book.create_from_isbn(isbn).id for isbn in isbns]
         if len(ids) == 1:
-            url = reverse('show_book', kwargs={'book_id': ids[0]})
+            url = reverse('show_book', kwargs={'pk': ids[0]})
         else:
             url = self.request.POST.get('redirect', reverse('index'))
 

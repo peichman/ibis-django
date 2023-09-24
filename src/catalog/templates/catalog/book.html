@@ -67,9 +67,10 @@
       {% endfor %}
       <dt></dt>
       <dd>
-      <form method="post" action="">
-	{% csrf_token %}
-	<input name="tag"/> <button>Add Tag</button>
+      <form method="post" action="{% url 'book_tags' pk=book.id %}">
+        {% csrf_token %}
+        {{ tag_form.tag }}
+        <button>Add Tag</button>
       </form>
       </dd>
     </dl>
