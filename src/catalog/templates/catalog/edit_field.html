@@ -1,0 +1,6 @@
+<form>
+  {% csrf_token %}
+  {{ field }}
+  <button hx-post="{{ url }}" hx-target="closest dd">Save</button>
+  <button hx-get="{% url 'book_field' book.id field_name %}" hx-target="closest dd">Cancel</button>
+</form>

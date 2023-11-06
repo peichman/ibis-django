@@ -10,5 +10,7 @@ urlpatterns = [
     path('<int:pk>', views.BookView.as_view(), name='show_book'),
     path('<int:pk>/metadata', views.EditBookView.as_view(), name='edit_book'),
     path('<int:pk>/tags', views.BookTagsView.as_view(), name='book_tags'),
+    path('<int:pk>/<str:field>', views.BookFieldView.as_view(), name='book_field'),
+    path('<int:pk>/<str:field>/edit', views.EditBookFieldView.as_view(), name='edit_book_field'),
     path('find', views.find, name='find'),
 ]

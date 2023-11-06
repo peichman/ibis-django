@@ -18,3 +18,10 @@ class BulkEditBooksForm(forms.Form):
 
 class SingleTagForm(forms.Form):
     tag = forms.CharField()
+
+
+class BookForm(forms.ModelForm):
+    class Meta:
+        model = Book
+        fields = ["title", "subtitle", "publisher", "publication_date", "format", "isbn"]
+

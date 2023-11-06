@@ -20,12 +20,13 @@ dl {
 dt {
     font-weight: bold;
     border-bottom: 1px solid #ccc;
-    line-height: 1.5;
+    line-height: 2;
 }
 dd {
     margin-left: 0;
     border-bottom: 1px solid #ccc;
-    line-height: 1.5;
+    line-height: 2;
+    max-width: 30em;
 }
 dd>dl>dt {
     font-weight: normal;
@@ -38,8 +39,25 @@ dd>dl>dt {
 }
 .value-tag~.label-tag {
     visibility: hidden;
-    border-bottom: 1px solid #ccc;
 }
 dd>form {
     padding-bottom: .5em;
+}
+dd>button {
+    opacity: 0.25;
+    float: right;
+    /* visibility: hidden; */
+}
+dd:hover>button {
+    opacity: 1.0;
+    /* visibility: true; */
+}
+.value-format {
+    text-transform: capitalize;
+}
+.value-author~.label-author {
+    visibility: hidden;
+}
+button {
+    cursor: pointer;
 }

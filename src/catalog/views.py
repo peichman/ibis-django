@@ -5,6 +5,7 @@ from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
 from django.db.models import OuterRef, Subquery, Q
 from django.http import HttpRequest, HttpResponseRedirect, Http404
+from django.http.response import HttpResponseRedirectBase
 from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
 from django.views import View
@@ -12,7 +13,7 @@ from django.views.generic import TemplateView, UpdateView, DetailView, FormView
 from nameparser.config import CONSTANTS
 from urlobject import URLObject
 
-from .forms import ImportForm, SingleISBNForm, BulkEditBooksForm, SingleTagForm
+from .forms import ImportForm, SingleISBNForm, BulkEditBooksForm, SingleTagForm, BookForm
 from .models import Book, Credit, Tag
 from .utils import getlines, filter_group, combine, FilterSet, \
     PaginationLinks, find_object
@@ -213,3 +214,48 @@ class EditBookView(UpdateView):
     model = Book
     fields = ["title", "publisher", "publication_date", "format"]
     template_name = 'catalog/edit_book.html'
+
+
+class BookFieldView(DetailView):
+    model = Book
+    template_name = 'catalog/show_field.html'
+    context_object_name = 'book'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        book = self.get_object()
+        field_name = self.kwargs.get('field')
+        context.update(
+            field_name=field_name,
+            value=getattr(book, field_name),
+        )
+        return context
+
+
+class HttpResponseSeeOther(HttpResponseRedirectBase):
+    status_code = 303
+
+
+class EditBookFieldView(TemplateView):
+    template_name = 'catalog/edit_field.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        book = Book.objects.get(pk=self.kwargs.get('pk'))
+        field_name = self.kwargs.get('field')
+        form = BookForm(instance=book)
+        field = form.fields[field_name]
+        context.update(
+            book=book,
+            field_name=field_name,
+            field=field.get_bound_field(form, field_name),
+            url=reverse('edit_book_field', args=(book.id, field_name)),
+        )
+        return context
+
+    def post(self, _request, pk: int, field: str):
+        book = Book.objects.get(pk=pk)
+        value = _request.POST[field]
+        setattr(book, field, value)
+        book.save()
+        return HttpResponseSeeOther(reverse('book_field', kwargs={'pk': pk, 'field': field}))

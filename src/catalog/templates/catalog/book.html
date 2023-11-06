@@ -7,15 +7,21 @@
   <meta charset="UTF-8">
   <title>{{ book }}</title>
   <link rel="stylesheet" type="text/css" href="{% static 'catalog/book.css' %}"/>
+  <script src="https://unpkg.com/htmx.org@1.9.7" integrity="sha384-EAzY246d6BpbWR7sQ8+WEm40J8c3dHFsqC58IgPlh4kMbRRI6P6WA+LA/qGAyAu8" crossorigin="anonymous"></script>
 </head>
 <body>
-<p>
-  <a href="{% url 'index' %}">Catalog Index</a>
-</p>
+<form class="add-by-isbn" method="post" action="{% url 'import_by_isbn' %}">
+  <div>
+    <a href="{% url 'index' %}">Catalog Index</a>
+    —
+    {% csrf_token %}
+    {% redirect_tag %}
+    Add by ISBN: {{ isbn_form.isbn }}
+    <button>Submit</button>
+  </div>
+</form>
 
 <h1>{{ book }}</h1>
-
-<p><a href="{% url 'edit_book' book.id %}">Edit</a></p>
 
 <div class="book-details">
   <div class="book-cover">
@@ -30,17 +36,19 @@
     <h2>Metadata</h2>
     <dl>
       <dt>Title</dt>
-      <dd>{{ book.title }}</dd>
-      {% if book.subtitle %}
-      <dt>Subtitle</dt>
-      <dd>{{ book.subtitle }}</dd>
-      {% endif %}
-      {% for credit in book.credits.all %}
-      <dt>{{ credit.role.capitalize }}</dt>
       <dd>
-      <a href="{% url 'index' %}?{{ credit.role }}={{ credit.person.name | urlencode }}">
-        {{ credit.person.name }}
-      </a>
+        {% include 'catalog/show_field.html' with field_name='title' value=book.title %}
+      </dd>
+      <dt>Subtitle</dt>
+      <dd>
+        {% include 'catalog/show_field.html' with field_name='subtitle' value=book.subtitle %}
+      </dd>
+      {% for credit in book.credits.all %}
+      <dt class="label-{{ credit.role }}">{{ credit.role.capitalize }}</dt>
+      <dd class="value-{{ credit.role }}">
+        <a href="{% url 'index' %}?{{ credit.role }}={{ credit.person.name | urlencode }}">
+          {{ credit.person.name }}
+        </a>
       </dd>
       {% endfor %}
 
@@ -50,14 +58,22 @@
       {% endfor %}
 
       <dt>Published</dt>
-      <dd>{{ book.publication_date }}</dd>
+      <dd>
+        {% include 'catalog/show_field.html' with field_name='publication_date' value=book.publication_date %}
+      </dd>
       <dt>Publisher</dt>
-      <dd>{{ book.publisher }}</dd>
+      <dd>
+        {% include 'catalog/show_field.html' with field_name='publisher' value=book.publisher %}
+      </dd>
       <dt>Format</dt>
-      <dd>{{ book.format.capitalize }}</dd>
+      <dd class="value-format">
+        {% include 'catalog/show_field.html' with field_name='format' value=book.format %}
+      </dd>
 
       <dt>ISBN</dt>
-      <dd>{{ book.isbn }}</dd>
+      <dd>
+        {% include 'catalog/show_field.html' with field_name='isbn' value=book.isbn %}
+      </dd>
       <dt>UUID</dt>
       <dd>{{ book.uuid }}</dd>
 
@@ -104,14 +120,5 @@
   {% endif %}
 </div>
 
-<p>
-  <a href="{% url 'index' %}">Catalog Index</a>
-</p>
-<form class="add-by-isbn" method="post" action="{% url 'import_by_isbn' %}">
-  {% csrf_token %}
-  {% redirect_tag %}
-  Add by ISBN: {{ isbn_form.isbn }}
-  <button>Submit</button>
-</form>
 </body>
 </html>
