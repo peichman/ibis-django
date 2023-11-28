@@ -10,12 +10,44 @@
 <form method="post" action="{% url 'bulk_edit_books' %}">
     {% csrf_token %}
     <input type="hidden" name="redirect" value="{{ redirect }}"/>
-    <ul>
-        {% for book in books %}
-        <li><input type="hidden" name="book_id" value="{{ book.id }}"/>{{ book }}</li>
+
+    <table>
+        <thead>
+        <tr>
+            <th>{{ form.title.label }}</th>
+            <th>{{ form.subtitle.label }}</th>
+            <th>Credits</th>
+            <th>{{ form.publisher.label }}</th>
+            <th>{{ form.publication_date.label }}</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for form in forms %}
+        <tr>
+            <td>
+                <input type="hidden" name="book_id" value="{{ form.instance.id }}"/>
+                {{ form.title }}
+            </td>
+            <td>
+                {{ form.subtitle }}
+            </td>
+            <td>
+                <ul>
+                    {% for credit in form.instance.credits %}
+                    <li>{{ credit.person.name }}</li>
+                    {% endfor %}
+                </ul>
+            </td>
+            <td>
+                {{ form.publisher }}
+            </td>
+            <td>
+                {{ form.publication_date }}
+            </td>
+        </tr>
         {% endfor %}
-    </ul>
-    {{ form }}
+        </tbody>
+    </table>
     <button>Save</button>
 </form>
 </body>

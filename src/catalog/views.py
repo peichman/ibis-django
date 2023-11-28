@@ -1,10 +1,11 @@
 import re
+from typing import Iterable, Iterator
 from urllib.parse import urlencode
 
 from django.core.exceptions import BadRequest
 from django.core.paginator import Paginator
 from django.db.models import OuterRef, Subquery, Q
-from django.http import HttpRequest, HttpResponseRedirect, Http404
+from django.http import HttpRequest, HttpResponseRedirect, Http404, QueryDict
 from django.http.response import HttpResponseRedirectBase
 from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
@@ -13,7 +14,7 @@ from django.views.generic import TemplateView, UpdateView, DetailView, FormView
 from nameparser.config import CONSTANTS
 from urlobject import URLObject
 
-from .forms import ImportForm, SingleISBNForm, BulkEditBooksForm, SingleTagForm, BookForm
+from .forms import ImportForm, SingleISBNForm, SingleTagForm, BookForm
 from .models import Book, Credit, Tag
 from .utils import getlines, filter_group, combine, FilterSet, \
     PaginationLinks, find_object
@@ -179,25 +180,45 @@ class ImportByISBNView(TemplateView):
         return HttpResponseRedirect(url)
 
 
-class BulkEditBooksView(TemplateView):
+class BulkEditBooksView(FormView):
+    form_class = BookForm
     template_name = 'catalog/bulk_edit_books.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        books = Book.objects.filter(id__in=self.request.GET.getlist('book_id'))
         context.update({
-            'form': BulkEditBooksForm(),
-            'books': [Book.objects.get(pk=book_id) for book_id in self.request.GET.getlist('book_id')],
+            'forms': [BookForm(instance=book) for book in books],
+            'books': books,
             'redirect': self.request.GET['redirect']
         })
+        return context
 
-    def post(self, _request):
-        book_ids = self.request.POST.getlist('book_id')
-        new_format = self.request.POST['format']
-        for book_id in book_ids:
-            book = Book.objects.get(pk=book_id)
-            book.format = new_format
+    def post(self, request, *args, **kwargs):
+        field_keys = ('book_id', 'title', 'subtitle', 'publisher', 'publication_date')
+
+        for row in build_rows(self.request.POST, field_keys):
+            pk = row.pop('book_id')
+            book = Book.objects.get(pk=pk)
+            for k, v in row.items():
+                setattr(book, k, v)
             book.save()
+
         return HttpResponseRedirect(self.request.POST.get('redirect', reverse('index')))
+
+
+def build_rows(post_data: QueryDict, field_keys: Iterable[str]) -> Iterator[dict[str, str]]:
+    yield from (dict(zip(field_keys, row_values)) for row_values in build_row_values_iter(post_data, field_keys))
+
+
+def build_row_values_iter(post_data: QueryDict, fields: Iterable[str]) -> Iterator[Iterable[str]]:
+    """Transform a query dictionary with data keyed by field to an iterator
+    that yields tuples with the nth value of each field, in the order of
+    the fields iterable.
+
+    This is essentially "rotating" tabular data that is initially keyed
+    by column into groups by row."""
+    yield from zip(*(post_data.getlist(field) for field in fields))
 
 
 def find(request):
@@ -255,7 +276,7 @@ class EditBookFieldView(TemplateView):
 
     def post(self, _request, pk: int, field: str):
         book = Book.objects.get(pk=pk)
-        value = _request.POST[field]
+        value = self.request.POST[field]
         setattr(book, field, value)
         book.save()
         return HttpResponseSeeOther(reverse('book_field', kwargs={'pk': pk, 'field': field}))

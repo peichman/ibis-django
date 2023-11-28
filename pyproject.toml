@@ -2,7 +2,7 @@
 name = "ibis-django"
 version = "1.0.0dev"
 dependencies = [
-    "django ~= 3.2",
+    "django ~= 4.1",
     "django-environ",
     "isbnlib",
     "nameparser",
