@@ -59,15 +59,15 @@
 
       <dt>Published</dt>
       <dd>
-        {% include 'catalog/show_field.html' with field_name='publication_date' value=book.publication_date %}
+        {% include 'catalog/show_field.html' with field_name='year' value=book.publication_date link=True %}
       </dd>
       <dt>Publisher</dt>
       <dd>
-        {% include 'catalog/show_field.html' with field_name='publisher' value=book.publisher %}
+        {% include 'catalog/show_field.html' with field_name='publisher' value=book.publisher link=True %}
       </dd>
       <dt>Format</dt>
       <dd class="value-format">
-        {% include 'catalog/show_field.html' with field_name='format' value=book.format %}
+        {% include 'catalog/show_field.html' with field_name='format' value=book.format link=True %}
       </dd>
 
       <dt>ISBN</dt>

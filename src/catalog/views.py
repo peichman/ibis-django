@@ -249,6 +249,7 @@ class BookFieldView(DetailView):
         context.update(
             field_name=field_name,
             value=getattr(book, field_name),
+            link=(field_name in ('publisher', 'publication_date', 'format')),
         )
         return context
 
