@@ -5,10 +5,10 @@ import requests
 from django.db import models
 from django.db.models import QuerySet
 from django.urls import reverse
-from isbnlib import is_isbn10, is_isbn13
+from isbnlib import is_isbn10, is_isbn13, NotValidISBNError, ISBNLibException
 from nameparser import HumanName
 
-from catalog.utils import split_title, get_format, get_classifier_tags
+from catalog.utils import split_title, get_format
 
 
 class Person(models.Model):
@@ -71,16 +71,20 @@ class Book(models.Model):
         if not (is_isbn10(isbn) or is_isbn13(isbn)):
             # skip this, not an ISBN
             # TODO: log this
-            return
+            raise NotValidISBNError(isbn)
 
-        book, book_is_new = cls.objects.get_or_create(isbn=isbn)
 
-        if not book_is_new:
+        try:
             # skip this book, it is already in the catalog
             # TODO: log this
-            return book
+            return cls.objects.get(isbn=isbn)
+        except cls.DoesNotExist:
+            book = cls(isbn=isbn)
 
-        metadata = isbnlib.meta(isbn)
+        try:
+            metadata = isbnlib.meta(isbn, service='openl')
+        except ISBNLibException as e:
+            raise
         # TODO: what to do if metadata is empty?
 
         book.title, book.subtitle = split_title(metadata.get('Title', isbn))
