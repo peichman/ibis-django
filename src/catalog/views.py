@@ -11,6 +11,7 @@ from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import TemplateView, UpdateView, DetailView, FormView
+from isbnlib import ISBNLibException
 from nameparser.config import CONSTANTS
 from urlobject import URLObject
 
@@ -171,13 +172,30 @@ class ImportByISBNView(TemplateView):
         sort_name_format = '{last}, {title} {first} {suffix}'
         CONSTANTS.string_format = sort_name_format
 
-        ids = [Book.create_from_isbn(isbn).id for isbn in isbns]
-        if len(ids) == 1:
-            url = reverse('show_book', kwargs={'pk': ids[0]})
-        else:
-            url = self.request.POST.get('redirect', reverse('index'))
+        import_results = []
+        for isbn in isbns:
+            try:
+                book = Book.create_from_isbn(isbn)
+                import_results.append({
+                    'isbn': isbn,
+                    'success': True,
+                    'id': book.id,
+                    'title': book.title,
+                })
+            except ISBNLibException as e:
+                import_results.append({
+                    'isbn': isbn,
+                    'success': False,
+                    'message': str(e),
+                })
 
-        return HttpResponseRedirect(url)
+        if len(import_results) == 1 and import_results[0]['success']:
+            url = reverse('show_book', kwargs={'pk': import_results[0]['id']})
+            return HttpResponseRedirect(url)
+        else:
+            return render(self.request, 'catalog/import_results.html', context={'results': import_results})
+            #url = self.request.POST.get('redirect', reverse('index'))
+
 
 
 class BulkEditBooksView(FormView):
