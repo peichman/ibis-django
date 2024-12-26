@@ -3,4 +3,4 @@
 {% else %}
 {{ value }}
 {% endif %}
-<button hx-get="{% url 'edit_book_field' book.id field_name %}" hx-target="closest dd">Edit</button>
+<button hx-get="{% url 'edit_book_field' obj.id field_name %}" hx-target="closest dd">Edit</button>
