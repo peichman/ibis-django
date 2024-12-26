@@ -29,7 +29,7 @@ CATEGORIES = {
 FILTER_TEMPLATES = {
     'category': lambda value: CATEGORIES.get(value, None),
     'format': lambda value: Q(format=value),
-    'year': lambda value: Q(publication_date=value),
+    'publication_date': lambda value: Q(publication_date=value),
     'isbn': lambda value: Q(isbn=value),
     'q': lambda value: Q(title__icontains=value) | Q(persons__name__icontains=value),
     **filter_group('title'),
