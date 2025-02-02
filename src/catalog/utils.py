@@ -121,11 +121,12 @@ def getlines(text: str) -> list[str]:
     return list(str(s) for s in filter(len, (map(str.strip, text.splitlines()))))
 
 
-def split_title(title: str, separator: str = ' - ') -> list[str, str]:
+def split_title(title: str, separator: str = ' - ') -> tuple[str, str]:
     if separator in title:
-        return [titlecase(s) for s in title.split(separator, 1)]
+        main, sub = title.split(separator, 1)
+        return titlecase(main), titlecase(sub)
     else:
-        return [titlecase(title), '']
+        return titlecase(title), ''
 
 
 def get_format(isbn):

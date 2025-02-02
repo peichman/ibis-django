@@ -83,7 +83,7 @@ class Book(models.Model):
 
         try:
             metadata = isbnlib.meta(isbn, service='openl')
-        except ISBNLibException as e:
+        except ISBNLibException:
             raise
         # TODO: what to do if metadata is empty?
 
