@@ -44,12 +44,11 @@
       <dd>
         {% show_field obj=book name='subtitle' %}
       </dd>
+
       {% for credit in book.credits.all %}
-      <dt class="label-{{ credit.role }}">{{ credit.role.capitalize }}</dt>
-      <dd class="value-{{ credit.role }}">
-        <a href="{% url 'index' %}?{{ credit.role }}={{ credit.person.name | urlencode }}">
-          {{ credit.person.name }}
-        </a>
+      <dt class="label-credit">Credit</dt>
+      <dd class="value-credit">
+        {% include 'catalog/show_credit.html' %}
       </dd>
       {% endfor %}
 
@@ -121,5 +120,10 @@
   {% endif %}
 </div>
 
+<datalist id="persons">
+  {% for person in persons %}
+  <option value="{{ person.name }}"></option>
+  {% endfor %}
+</datalist>
 </body>
 </html>

@@ -15,8 +15,8 @@ from isbnlib import ISBNLibException
 from nameparser.config import CONSTANTS
 from urlobject import URLObject
 
-from .forms import ImportForm, SingleISBNForm, SingleTagForm, BookForm
-from .models import Book, Credit, Tag
+from .forms import ImportForm, SingleISBNForm, SingleTagForm, BookForm, CreditForm
+from .models import Book, Credit, Tag, Person
 from .utils import getlines, filter_group, combine, FilterSet, \
     PaginationLinks, find_object
 
@@ -124,6 +124,7 @@ class BookView(DetailView):
         context.update({
             'tag_form': SingleTagForm(),
             'isbn_form': SingleISBNForm(),
+            'persons': Person.objects.all(),
         })
         return context
 
@@ -258,7 +259,7 @@ class EditBookView(UpdateView):
 class BookFieldView(DetailView):
     model = Book
     template_name = 'catalog/show_field.html'
-    context_object_name = 'book'
+    context_object_name = 'obj'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -299,3 +300,30 @@ class EditBookFieldView(TemplateView):
         setattr(book, field, value)
         book.save()
         return HttpResponseSeeOther(reverse('book_field', kwargs={'pk': pk, 'field': field}))
+
+
+class ShowCreditView(DetailView):
+    model = Credit
+    template_name = 'catalog/show_credit.html'
+    context_object_name = 'credit'
+
+
+class EditCreditView(TemplateView):
+    template_name = 'catalog/edit_credit.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        credit = Credit.objects.get(pk=self.kwargs['pk'])
+        form = CreditForm({'role': credit.role, 'person': credit.person.name})
+        context.update(
+            credit=credit,
+            form=form,
+        )
+        return context
+
+    def post(self, *args, **kwargs):
+        credit = Credit.objects.get(pk=self.kwargs['pk'])
+        credit.role = self.request.POST['role']
+        credit.person = Person.objects.get(name=self.request.POST['person'])
+        credit.save()
+        return HttpResponseSeeOther(reverse('credit', kwargs={'pk': credit.pk}))

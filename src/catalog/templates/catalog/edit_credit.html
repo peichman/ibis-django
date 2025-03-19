@@ -1,0 +1,6 @@
+<form>
+  {% csrf_token %}
+  {{ form.role }} {{ form.person }}
+  <button hx-post="{% url 'edit_credit' credit.id %}" hx-target="closest dd">Save</button>
+  <button hx-get="{% url 'credit' credit.id %}" hx-target="closest dd">Cancel</button>
+</form>

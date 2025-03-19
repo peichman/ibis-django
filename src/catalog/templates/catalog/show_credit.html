@@ -1,0 +1,5 @@
+<strong class="role">{{ credit.role.capitalize }}</strong>
+<a class="name" href="{% url 'index' %}?{{ credit.role }}={{ credit.person.name | urlencode }}">
+    {{ credit.person.name }}
+</a>
+<button hx-get="{% url 'edit_credit' credit.id %}" hx-target="closest dd">Edit</button>

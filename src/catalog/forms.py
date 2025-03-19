@@ -1,6 +1,7 @@
 from django import forms
+from django.forms import ChoiceField, ModelChoiceField, CharField, TextInput
 
-from .models import Person, Book
+from .models import Person, Book, Credit
 
 
 class ImportForm(forms.Form):
@@ -25,3 +26,7 @@ class BookForm(forms.ModelForm):
         model = Book
         fields = ["title", "subtitle", "publisher", "publication_date", "format", "isbn"]
 
+
+class CreditForm(forms.Form):
+    role = ChoiceField(choices=Credit.Role.choices)
+    person = CharField(widget=TextInput(attrs={'list': 'persons'}))
