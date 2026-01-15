@@ -1,3 +1,4 @@
+from functools import cached_property
 from uuid import uuid4
 
 import isbnlib
@@ -33,18 +34,20 @@ class Tag(models.Model):
 class CoverImage:
     def __init__(self, book: 'Book'):
         self.book = book
-        self._available = None
-        self._url = f'https://covers.openlibrary.org/b/isbn/{self.book.isbn}-M.jpg'
+        self.base_url = f'https://covers.openlibrary.org/b/isbn/{self.book.isbn}'
 
     @property
     def url(self):
-        return self._url
+        return f'{self.base_url}-M.jpg'
 
     @property
+    def large(self):
+        return f'{self.base_url}-L.jpg'
+
+    @cached_property
     def is_available(self):
-        if self._available is None:
-            self._available = requests.head(self._url).ok
-        return self._available
+        res = requests.head(self.url)
+        return res.ok and 'content-type' in res.headers
 
 
 class Book(models.Model):
